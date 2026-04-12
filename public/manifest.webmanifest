@@ -1,0 +1,9 @@
+{
+  "name": "Tranquility Task Tracker",
+  "short_name": "Tranquility",
+  "description": "Self-hosted productivity app for tasks, habits, and notes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b"
+}

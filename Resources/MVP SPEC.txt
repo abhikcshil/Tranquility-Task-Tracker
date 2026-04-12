@@ -1,0 +1,119 @@
+# MVP SPEC
+
+## Goal
+A self-hosted productivity app combining tasks, habits, notes, and gamification with strong visual feedback.
+
+---
+
+## Core Features
+
+### 1. Dashboard (Home)
+- Progress rings:
+  - Daily completion
+  - Weekly tasks completion
+  - Weekly points progress
+- Sections:
+  - Today tasks
+  - This Week tasks
+  - Habits
+  - Quick add input
+  - Pinned note preview
+
+---
+
+### 2. Tasks
+- Create/edit/delete tasks
+- Fields:
+  - title
+  - category
+  - due date (optional)
+  - notes
+  - point value
+- Inbox-style queue
+
+---
+
+### 3. Recurring Tasks
+Supported types:
+- daily
+- weekdays
+- weekly (flexible, no fixed day)
+- monthly
+- yearly
+
+Weekly tasks:
+- can require N completions per week
+- not tied to a day
+
+---
+
+### 4. Habits
+- Daily or weekly frequency
+- Streak tracking
+- Completion history
+
+---
+
+### 5. Notes
+- Create/edit/delete notes
+- Pin notes
+- Simple text content
+
+---
+
+### 6. Natural Language Input
+Examples:
+- "Laundry this week"
+- "Gym 4x this week"
+- "Pay rent on the 1st every month"
+- "Call mom Friday 6pm"
+
+Must:
+- extract date/time
+- detect recurrence when possible
+- fallback gracefully
+
+---
+
+### 7. Points System
+- Tasks award points
+- Habits award points
+- Weekly goal exists
+- Progress tracked visually
+
+---
+
+### 8. Focus Mode
+- Shows only:
+  - top 3 tasks
+  - minimal UI
+
+---
+
+### 9. Weekly Reset
+- Shows:
+  - last week summary
+  - completed vs missed tasks
+- Resets weekly progress
+
+---
+
+## Data Models (High-Level)
+- User
+- Task
+- TaskInstance
+- RecurringRule
+- Habit
+- HabitCompletion
+- Note
+- Category
+- PointEvent
+- WeeklyStats
+
+---
+
+## Non-Goals (MVP)
+- multi-user collaboration
+- advanced analytics
+- AI-based suggestions
+- complex notification systems

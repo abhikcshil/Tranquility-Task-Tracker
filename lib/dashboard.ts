@@ -54,7 +54,10 @@ export function computeDailyProgress(tasks: TaskListItem[], today: Date): Progre
 export function computeWeeklyTaskProgress(tasks: TaskListItem[]): ProgressMetrics {
   const recurringWeekly = tasks.filter((task) => task.recurringRule?.type === 'weekly');
 
-  const completed = recurringWeekly.reduce((sum, task) => sum + (task.weeklyProgress?.completed ?? 0), 0);
+  const completed = recurringWeekly.reduce(
+    (sum, task) => sum + (task.weeklyProgress?.completed ?? 0),
+    0,
+  );
   const total = recurringWeekly.reduce((sum, task) => sum + (task.weeklyProgress?.target ?? 1), 0);
 
   return {
@@ -64,7 +67,10 @@ export function computeWeeklyTaskProgress(tasks: TaskListItem[]): ProgressMetric
   };
 }
 
-export function computeWeeklyPointsProgress(pointsEarned: number, weeklyGoal = WEEKLY_POINTS_GOAL): ProgressMetrics {
+export function computeWeeklyPointsProgress(
+  pointsEarned: number,
+  weeklyGoal = WEEKLY_POINTS_GOAL,
+): ProgressMetrics {
   const safeGoal = weeklyGoal <= 0 ? WEEKLY_POINTS_GOAL : weeklyGoal;
 
   return {
@@ -125,7 +131,11 @@ export function getWeeklyTasks(tasks: TaskListItem[], today = new Date()): TaskL
       return false;
     }
 
-    return appearsInWeek(rule) || appearsInMonth(rule, today, task.dueDate) || appearsInYear(rule, today, task.dueDate);
+    return (
+      appearsInWeek(rule) ||
+      appearsInMonth(rule, today, task.dueDate) ||
+      appearsInYear(rule, today, task.dueDate)
+    );
   });
 }
 

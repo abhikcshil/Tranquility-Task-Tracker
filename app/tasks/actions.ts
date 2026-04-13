@@ -49,6 +49,7 @@ export async function createTaskAction(formData: FormData) {
     notes: parseOptionalString(formData.get('notes')),
     categoryId: parseOptionalInt(formData.get('categoryId')),
     dueDate: parseOptionalString(formData.get('dueDate')),
+    reminderAt: parseOptionalString(formData.get('reminderAt')),
     pointValue: parseOptionalInt(formData.get('pointValue')),
     recurrence: parseRecurrence(formData),
   });
@@ -70,6 +71,7 @@ export async function updateTaskAction(formData: FormData) {
     notes: parseOptionalString(formData.get('notes')),
     categoryId: parseOptionalInt(formData.get('categoryId')),
     dueDate: parseOptionalString(formData.get('dueDate')),
+    reminderAt: parseOptionalString(formData.get('reminderAt')),
     pointValue: parseOptionalInt(formData.get('pointValue')),
     recurrence: parseRecurrence(formData),
   });

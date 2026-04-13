@@ -11,6 +11,7 @@ export type TaskInput = {
   notes?: string | null;
   categoryId?: number | null;
   dueDate?: string | Date | null;
+  reminderAt?: string | Date | null;
   pointValue?: number | null;
   recurrence?: RecurrenceInput | null;
 };
@@ -56,6 +57,19 @@ export function validateRecurrenceInput(input: RecurrenceInput | null | undefine
   return recurrence;
 }
 
+export function validateReminderDate(value: string | Date | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const reminderAt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(reminderAt.getTime())) {
+    throw new Error('Reminder date/time is invalid.');
+  }
+
+  return reminderAt;
+}
+
 export function validateTaskInput(input: TaskInput) {
   const title = input.title.trim();
   if (!title) {
@@ -76,6 +90,8 @@ export function validateTaskInput(input: TaskInput) {
     }
   }
 
+  const reminderAt = validateReminderDate(input.reminderAt);
+
   const pointValue = input.pointValue ?? 5;
   if (!Number.isFinite(pointValue) || pointValue < 0) {
     throw new Error('Point value must be non-negative.');
@@ -86,6 +102,7 @@ export function validateTaskInput(input: TaskInput) {
     notes: normalizeOptionalText(input.notes),
     categoryId,
     dueDate,
+    reminderAt,
     pointValue: Math.round(pointValue),
     recurrence: validateRecurrenceInput(input.recurrence),
   };
@@ -100,5 +117,29 @@ export function validateNoteInput(input: NoteInput) {
   return {
     title,
     content: (input.content ?? '').trim(),
+  };
+}
+
+export function validateWeeklyGoal(value: number): number {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error('Weekly points goal must be a non-negative integer.');
+  }
+
+  return value;
+}
+
+export function validateMilestoneInput(input: { label: string; points: number }) {
+  const label = input.label.trim();
+  if (!label) {
+    throw new Error('Milestone label is required.');
+  }
+
+  if (!Number.isInteger(input.points) || input.points <= 0) {
+    throw new Error('Milestone points must be a positive integer.');
+  }
+
+  return {
+    label,
+    points: input.points,
   };
 }

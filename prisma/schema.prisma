@@ -23,6 +23,7 @@ model Task {
   notes       String?
   categoryId  Int?
   dueDate     DateTime?
+  pointValue  Int             @default(5)
   isCompleted Boolean         @default(false)
   isArchived  Boolean         @default(false)
   createdAt   DateTime        @default(now())

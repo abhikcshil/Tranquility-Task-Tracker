@@ -79,11 +79,23 @@ export default async function DashboardPage() {
       </section>
 
       <SectionCard title="Today tasks" description="One-time and due-now items.">
-        <TaskList tasks={todayTasks} emptyTitle="No tasks due today" emptyMessage="Enjoy the extra room in your day." />
+        <TaskList
+          tasks={todayTasks}
+          emptyTitle="No tasks due today"
+          emptyMessage="Enjoy the extra room in your day."
+          showCompletionToggle
+          showEditLink
+        />
       </SectionCard>
 
       <SectionCard title="This week tasks" description="Flexible weekly tasks.">
-        <TaskList tasks={weeklyTasks} emptyTitle="No weekly tasks" emptyMessage="Weekly recurring tasks will show up here." />
+        <TaskList
+          tasks={weeklyTasks}
+          emptyTitle="No weekly tasks"
+          emptyMessage="Weekly recurring tasks will show up here."
+          showCompletionToggle
+          showEditLink
+        />
       </SectionCard>
 
       <SectionCard title="Habits" description="Progress snapshots from your current habits.">

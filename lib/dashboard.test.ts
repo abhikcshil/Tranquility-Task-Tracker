@@ -15,6 +15,8 @@ function makeTask(overrides: Partial<TaskListItem>): TaskListItem {
     title: 'Task',
     notes: null,
     dueDate: null,
+    categoryId: null,
+    pointValue: 5,
     isCompleted: false,
     isArchived: false,
     createdAt: new Date('2026-04-01T10:00:00.000Z'),

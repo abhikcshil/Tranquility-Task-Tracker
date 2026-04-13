@@ -7,6 +7,7 @@ export type TaskListItem = {
   dueDate: Date | null;
   isCompleted: boolean;
   isArchived: boolean;
+  createdAt: Date;
   category: {
     name: string;
     color: string;
@@ -24,7 +25,7 @@ export async function getTasks(): Promise<TaskListItem[]> {
       category: true,
       recurringRule: true,
     },
-    orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+    orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
   });
 
   return tasks.map((task) => ({
@@ -34,6 +35,7 @@ export async function getTasks(): Promise<TaskListItem[]> {
     dueDate: task.dueDate,
     isCompleted: task.isCompleted,
     isArchived: task.isArchived,
+    createdAt: task.createdAt,
     category: task.category
       ? {
           name: task.category.name,

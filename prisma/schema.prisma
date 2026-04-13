@@ -7,25 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RecurringType {
-  daily
-  weekdays
-  weekly
-  monthly
-  yearly
-}
-
-enum HabitFrequencyType {
-  daily
-  weekly
-}
-
-enum PointSourceType {
-  task
-  habit
-  bonus
-}
-
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -58,7 +39,8 @@ model Task {
 model RecurringRule {
   id          Int           @id @default(autoincrement())
   taskId       Int          @unique
-  type         RecurringType
+  // Allowed values: daily, weekdays, weekly, monthly, yearly
+  type         String
   frequency    Int?
   daysOfWeek   String?
   dayOfMonth   Int?
@@ -87,7 +69,8 @@ model Habit {
   title         String
   notes         String?
   categoryId    Int?
-  frequencyType HabitFrequencyType
+  // Allowed values: daily, weekly
+  frequencyType String
   targetCount   Int                 @default(1)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
@@ -121,7 +104,8 @@ model Note {
 model PointEvent {
   id         Int             @id @default(autoincrement())
   amount     Int
-  sourceType PointSourceType
+  // Allowed values: task, habit, bonus
+  sourceType String
   sourceId   Int?
   createdAt  DateTime        @default(now())
 

@@ -7,7 +7,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Placeholder {
+enum RecurringType {
+  daily
+  weekdays
+  weekly
+  monthly
+  yearly
+}
+
+enum HabitFrequencyType {
+  daily
+  weekly
+}
+
+enum PointSourceType {
+  task
+  habit
+  bonus
+}
+
+model Category {
   id        Int      @id @default(autoincrement())
+  name      String   @unique
+  color     String
   createdAt DateTime @default(now())
+
+  tasks  Task[]
+  habits Habit[]
+}
+
+model Task {
+  id          Int             @id @default(autoincrement())
+  title       String
+  notes       String?
+  categoryId  Int?
+  dueDate     DateTime?
+  isCompleted Boolean         @default(false)
+  isArchived  Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  recurringRule  RecurringRule?
+  instances      TaskInstance[]
+
+  @@index([categoryId])
+  @@index([dueDate])
+}
+
+model RecurringRule {
+  id          Int           @id @default(autoincrement())
+  taskId       Int          @unique
+  type         RecurringType
+  frequency    Int?
+  daysOfWeek   String?
+  dayOfMonth   Int?
+  monthOfYear  Int?
+  createdAt    DateTime      @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskInstance {
+  id           Int      @id @default(autoincrement())
+  taskId        Int
+  date          DateTime
+  completed     Boolean  @default(false)
+  pointsAwarded Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, date])
+  @@unique([taskId, date])
+}
+
+model Habit {
+  id            Int                 @id @default(autoincrement())
+  title         String
+  notes         String?
+  categoryId    Int?
+  frequencyType HabitFrequencyType
+  targetCount   Int                 @default(1)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  category    Category?          @relation(fields: [categoryId], references: [id])
+  completions HabitCompletion[]
+
+  @@index([categoryId])
+}
+
+model HabitCompletion {
+  id        Int      @id @default(autoincrement())
+  habitId    Int
+  date       DateTime
+  createdAt  DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@index([habitId, date])
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PointEvent {
+  id         Int             @id @default(autoincrement())
+  amount     Int
+  sourceType PointSourceType
+  sourceId   Int?
+  createdAt  DateTime        @default(now())
+
+  @@index([sourceType, sourceId])
 }

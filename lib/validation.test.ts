@@ -11,15 +11,29 @@ test('validateTaskInput rejects negative points', () => {
   assert.throws(() => validateTaskInput({ title: 'Read', pointValue: -1 }), /non-negative/);
 });
 
+test('validateTaskInput validates recurring frequency and weekdays', () => {
+  assert.throws(
+    () => validateTaskInput({ title: 'Run', recurrence: { type: 'weekly', frequency: 0 } }),
+    /positive integer/,
+  );
+
+  assert.throws(
+    () => validateTaskInput({ title: 'Run', recurrence: { type: 'weekdays', weekdays: [9] } }),
+    /weekday/,
+  );
+});
+
 test('validateTaskInput normalizes optional fields', () => {
   const result = validateTaskInput({
     title: '  Study chapter 3  ',
     notes: '  ',
     dueDate: '2026-04-20',
+    recurrence: { type: 'weekdays', weekdays: [1, 3, 5], frequency: 1 },
   });
 
   assert.equal(result.title, 'Study chapter 3');
   assert.equal(result.notes, null);
   assert.equal(result.pointValue, 5);
   assert.equal(result.dueDate?.toISOString().startsWith('2026-04-20'), true);
+  assert.equal(result.recurrence?.daysOfWeek, '1,3,5');
 });

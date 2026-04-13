@@ -1,3 +1,4 @@
+import { appearsInMonth, appearsInToday, appearsInWeek, appearsInYear } from '@/lib/recurrence';
 import type { NoteListItem } from '@/services/noteService';
 import type { TaskListItem } from '@/services/taskService';
 
@@ -39,11 +40,9 @@ export function getWeekRange(today: Date): { start: Date; end: Date } {
 }
 
 export function computeDailyProgress(tasks: TaskListItem[], today: Date): ProgressMetrics {
-  const dueTodayOneTimeTasks = tasks.filter(
-    (task) => task.dueDate && isSameDay(task.dueDate, today) && !task.recurringRule,
-  );
-  const completed = dueTodayOneTimeTasks.filter((task) => task.isCompleted).length;
-  const total = dueTodayOneTimeTasks.length;
+  const dueTodayTasks = tasks.filter((task) => getTodayTasks([task], today).length > 0);
+  const completed = dueTodayTasks.filter((task) => task.isCompleted).length;
+  const total = dueTodayTasks.length;
 
   return {
     completed,
@@ -53,9 +52,10 @@ export function computeDailyProgress(tasks: TaskListItem[], today: Date): Progre
 }
 
 export function computeWeeklyTaskProgress(tasks: TaskListItem[]): ProgressMetrics {
-  const weeklyTasks = tasks.filter((task) => task.recurringRule?.type === 'weekly');
-  const completed = weeklyTasks.filter((task) => task.isCompleted).length;
-  const total = weeklyTasks.length;
+  const recurringWeekly = tasks.filter((task) => task.recurringRule?.type === 'weekly');
+
+  const completed = recurringWeekly.reduce((sum, task) => sum + (task.weeklyProgress?.completed ?? 0), 0);
+  const total = recurringWeekly.reduce((sum, task) => sum + (task.weeklyProgress?.target ?? 1), 0);
 
   return {
     completed,
@@ -109,14 +109,26 @@ export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3):
 }
 
 export function getTodayTasks(tasks: TaskListItem[], today: Date): TaskListItem[] {
-  return tasks.filter((task) => task.dueDate && isSameDay(task.dueDate, today));
+  return tasks.filter((task) => {
+    if (!task.recurringRule) {
+      return Boolean(task.dueDate && isSameDay(task.dueDate, today));
+    }
+
+    return appearsInToday(task.recurringRule, today);
+  });
 }
 
-export function getWeeklyTasks(tasks: TaskListItem[]): TaskListItem[] {
-  return tasks.filter((task) => task.recurringRule?.type === 'weekly');
+export function getWeeklyTasks(tasks: TaskListItem[], today = new Date()): TaskListItem[] {
+  return tasks.filter((task) => {
+    const rule = task.recurringRule;
+    if (!rule) {
+      return false;
+    }
+
+    return appearsInWeek(rule) || appearsInMonth(rule, today, task.dueDate) || appearsInYear(rule, today, task.dueDate);
+  });
 }
 
 export function getPinnedNotesPreview(notes: NoteListItem[], limit = 3): NoteListItem[] {
   return notes.slice(0, limit);
 }
-

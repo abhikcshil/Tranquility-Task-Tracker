@@ -73,6 +73,7 @@ model Habit {
   // Allowed values: daily, weekly
   frequencyType String
   targetCount   Int                 @default(1)
+  pointValue    Int                 @default(5)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
@@ -91,6 +92,7 @@ model HabitCompletion {
   habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
   @@index([habitId, date])
+  @@unique([habitId, date])
 }
 
 model Note {

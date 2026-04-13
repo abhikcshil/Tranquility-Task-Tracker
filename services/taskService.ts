@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getEndOfWeek, getStartOfWeek } from '@/lib/habits';
 import { validateTaskInput, type TaskInput } from '@/lib/validation';
 
 export type TaskListItem = {
@@ -19,6 +20,11 @@ export type TaskListItem = {
   recurringRule: {
     type: string;
     frequency: number | null;
+    daysOfWeek: string | null;
+  } | null;
+  weeklyProgress: {
+    completed: number;
+    target: number;
   } | null;
 };
 
@@ -33,25 +39,16 @@ export type TaskCompletionPlan = {
   pointEventAction: 'create' | 'delete';
 };
 
-export function getTaskCompletionPlan(isCompleted: boolean): TaskCompletionPlan {
-  if (isCompleted) {
-    return { nextCompleted: false, pointEventAction: 'delete' };
-  }
+function toTaskListItem(task: any, weekStart: Date, weekEnd: Date): TaskListItem {
+  const weeklyTarget = task.recurringRule?.type === 'weekly' ? task.recurringRule.frequency ?? 1 : null;
+  const weeklyCompleted =
+    task.recurringRule?.type === 'weekly'
+      ? task.instances.filter((instance: { date: Date; completed: boolean }) => {
+          return instance.completed && instance.date >= weekStart && instance.date <= weekEnd;
+        }).length
+      : 0;
 
-  return { nextCompleted: true, pointEventAction: 'create' };
-}
-
-export async function getTasks(): Promise<TaskListItem[]> {
-  const tasks = await prisma.task.findMany({
-    where: { isArchived: false },
-    include: {
-      category: true,
-      recurringRule: true,
-    },
-    orderBy: [{ isCompleted: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }],
-  });
-
-  return tasks.map((task) => ({
+  return {
     id: task.id,
     title: task.title,
     notes: task.notes,
@@ -72,9 +69,48 @@ export async function getTasks(): Promise<TaskListItem[]> {
       ? {
           type: task.recurringRule.type,
           frequency: task.recurringRule.frequency,
+          daysOfWeek: task.recurringRule.daysOfWeek,
         }
       : null,
-  }));
+    weeklyProgress: weeklyTarget
+      ? {
+          completed: weeklyCompleted,
+          target: weeklyTarget,
+        }
+      : null,
+  };
+}
+
+export function getTaskCompletionPlan(isCompleted: boolean): TaskCompletionPlan {
+  if (isCompleted) {
+    return { nextCompleted: false, pointEventAction: 'delete' };
+  }
+
+  return { nextCompleted: true, pointEventAction: 'create' };
+}
+
+export async function getTasks(today = new Date()): Promise<TaskListItem[]> {
+  const weekStart = getStartOfWeek(today);
+  const weekEnd = getEndOfWeek(today);
+
+  const tasks = await prisma.task.findMany({
+    where: { isArchived: false },
+    include: {
+      category: true,
+      recurringRule: true,
+      instances: {
+        where: {
+          date: {
+            gte: weekStart,
+            lte: weekEnd,
+          },
+        },
+      },
+    },
+    orderBy: [{ isCompleted: 'asc' }, { dueDate: 'asc' }, { createdAt: 'asc' }],
+  });
+
+  return tasks.map((task) => toTaskListItem(task, weekStart, weekEnd));
 }
 
 export async function getTaskCategories(): Promise<CategoryOption[]> {
@@ -98,91 +134,144 @@ export async function createTask(input: TaskInput): Promise<TaskListItem> {
       categoryId: valid.categoryId,
       dueDate: valid.dueDate,
       pointValue: valid.pointValue,
+      recurringRule: valid.recurrence
+        ? {
+            create: {
+              type: valid.recurrence.type,
+              frequency: valid.recurrence.frequency,
+              daysOfWeek: valid.recurrence.daysOfWeek,
+            },
+          }
+        : undefined,
     },
     include: {
       category: true,
       recurringRule: true,
+      instances: true,
     },
   });
 
-  return {
-    id: task.id,
-    title: task.title,
-    notes: task.notes,
-    categoryId: task.categoryId,
-    dueDate: task.dueDate,
-    pointValue: task.pointValue,
-    isCompleted: task.isCompleted,
-    isArchived: task.isArchived,
-    createdAt: task.createdAt,
-    category: task.category
-      ? {
-          id: task.category.id,
-          name: task.category.name,
-          color: task.category.color,
-        }
-      : null,
-    recurringRule: null,
-  };
+  const weekStart = getStartOfWeek(new Date());
+  const weekEnd = getEndOfWeek(new Date());
+  return toTaskListItem(task, weekStart, weekEnd);
 }
 
 export async function updateTask(taskId: number, input: TaskInput): Promise<TaskListItem> {
   const valid = validateTaskInput(input);
 
-  const task = await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      title: valid.title,
-      notes: valid.notes,
-      categoryId: valid.categoryId,
-      dueDate: valid.dueDate,
-      pointValue: valid.pointValue,
-    },
-    include: {
-      category: true,
-      recurringRule: true,
-    },
+  const task = await prisma.$transaction(async (tx) => {
+    const updated = await tx.task.update({
+      where: { id: taskId },
+      data: {
+        title: valid.title,
+        notes: valid.notes,
+        categoryId: valid.categoryId,
+        dueDate: valid.dueDate,
+        pointValue: valid.pointValue,
+      },
+      include: {
+        category: true,
+        recurringRule: true,
+        instances: true,
+      },
+    });
+
+    if (!valid.recurrence && updated.recurringRule) {
+      await tx.recurringRule.delete({ where: { taskId } });
+    }
+
+    if (valid.recurrence && updated.recurringRule) {
+      await tx.recurringRule.update({
+        where: { taskId },
+        data: {
+          type: valid.recurrence.type,
+          frequency: valid.recurrence.frequency,
+          daysOfWeek: valid.recurrence.daysOfWeek,
+        },
+      });
+    }
+
+    if (valid.recurrence && !updated.recurringRule) {
+      await tx.recurringRule.create({
+        data: {
+          taskId,
+          type: valid.recurrence.type,
+          frequency: valid.recurrence.frequency,
+          daysOfWeek: valid.recurrence.daysOfWeek,
+        },
+      });
+    }
+
+    return tx.task.findUniqueOrThrow({
+      where: { id: taskId },
+      include: { category: true, recurringRule: true, instances: true },
+    });
   });
 
-  return {
-    id: task.id,
-    title: task.title,
-    notes: task.notes,
-    categoryId: task.categoryId,
-    dueDate: task.dueDate,
-    pointValue: task.pointValue,
-    isCompleted: task.isCompleted,
-    isArchived: task.isArchived,
-    createdAt: task.createdAt,
-    category: task.category
-      ? {
-          id: task.category.id,
-          name: task.category.name,
-          color: task.category.color,
-        }
-      : null,
-    recurringRule: task.recurringRule
-      ? {
-          type: task.recurringRule.type,
-          frequency: task.recurringRule.frequency,
-        }
-      : null,
-  };
+  const weekStart = getStartOfWeek(new Date());
+  const weekEnd = getEndOfWeek(new Date());
+  return toTaskListItem(task, weekStart, weekEnd);
 }
 
 export async function toggleTaskCompletion(taskId: number): Promise<TaskListItem> {
   return prisma.$transaction(async (tx) => {
+    const today = new Date();
+    const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
     const existing = await tx.task.findUniqueOrThrow({
       where: { id: taskId },
-      include: { category: true, recurringRule: true },
+      include: { category: true, recurringRule: true, instances: true },
     });
+
+    if (existing.recurringRule?.type === 'weekly') {
+      const existingInstance = await tx.taskInstance.findUnique({
+        where: {
+          taskId_date: {
+            taskId,
+            date: todayKey,
+          },
+        },
+      });
+
+      if (existingInstance?.completed) {
+        await tx.taskInstance.delete({ where: { id: existingInstance.id } });
+        const event = await tx.pointEvent.findFirst({
+          where: { sourceType: 'task-instance', sourceId: existingInstance.id },
+        });
+        if (event) {
+          await tx.pointEvent.delete({ where: { id: event.id } });
+        }
+      } else {
+        const instance = await tx.taskInstance.upsert({
+          where: { taskId_date: { taskId, date: todayKey } },
+          create: { taskId, date: todayKey, completed: true, pointsAwarded: existing.pointValue },
+          update: { completed: true, pointsAwarded: existing.pointValue },
+        });
+
+        await tx.pointEvent.create({
+          data: {
+            amount: existing.pointValue,
+            sourceType: 'task-instance',
+            sourceId: instance.id,
+          },
+        });
+      }
+
+      const task = await tx.task.findUniqueOrThrow({
+        where: { id: taskId },
+        include: { category: true, recurringRule: true, instances: true },
+      });
+      const weekStart = getStartOfWeek(today);
+      const weekEnd = getEndOfWeek(today);
+      return toTaskListItem(task, weekStart, weekEnd);
+    }
 
     const plan = getTaskCompletionPlan(existing.isCompleted);
 
     const task = await tx.task.update({
       where: { id: taskId },
       data: { isCompleted: plan.nextCompleted },
-      include: { category: true, recurringRule: true },
+      include: { category: true, recurringRule: true, instances: true },
     });
 
     if (plan.pointEventAction === 'create') {
@@ -209,30 +298,9 @@ export async function toggleTaskCompletion(taskId: number): Promise<TaskListItem
       }
     }
 
-    return {
-      id: task.id,
-      title: task.title,
-      notes: task.notes,
-      categoryId: task.categoryId,
-      dueDate: task.dueDate,
-      pointValue: task.pointValue,
-      isCompleted: task.isCompleted,
-      isArchived: task.isArchived,
-      createdAt: task.createdAt,
-      category: task.category
-        ? {
-            id: task.category.id,
-            name: task.category.name,
-            color: task.category.color,
-          }
-        : null,
-      recurringRule: task.recurringRule
-        ? {
-            type: task.recurringRule.type,
-            frequency: task.recurringRule.frequency,
-          }
-        : null,
-    };
+    const weekStart = getStartOfWeek(today);
+    const weekEnd = getEndOfWeek(today);
+    return toTaskListItem(task, weekStart, weekEnd);
   });
 }
 

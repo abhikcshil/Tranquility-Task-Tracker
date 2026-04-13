@@ -94,6 +94,21 @@ test('getTodayTasks includes daily recurring tasks', () => {
   );
 });
 
+
+test('getTodayTasks includes manual due-today tasks and excludes completed tasks', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({ id: 1, dueDate: new Date(2026, 3, 13, 0, 0, 0, 0), isCompleted: false }),
+    makeTask({ id: 2, dueDate: new Date(2026, 3, 13, 8, 0, 0, 0), isCompleted: true }),
+    makeTask({ id: 3, dueDate: new Date(2026, 3, 12, 20, 0, 0, 0), isCompleted: false }),
+  ];
+
+  assert.deepEqual(
+    getTodayTasks(tasks, today).map((task) => task.id),
+    [1],
+  );
+});
+
 test('selectFocusTasks prioritizes overdue, then today, then oldest incomplete', () => {
   const today = new Date('2026-04-13T12:00:00.000Z');
   const tasks = [

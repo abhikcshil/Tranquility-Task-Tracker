@@ -1,3 +1,4 @@
+import { endOfLocalWeek, isSameLocalDay, startOfLocalDay, startOfLocalWeek } from '@/lib/dates';
 import { appearsInMonth, appearsInToday, appearsInWeek, appearsInYear } from '@/lib/recurrence';
 import type { NoteListItem } from '@/services/noteService';
 import type { TaskListItem } from '@/services/taskService';
@@ -14,33 +15,23 @@ function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function isSameDay(dateA: Date, dateB: Date): boolean {
-  return (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
-  );
-}
+function isTaskDueToday(task: TaskListItem, today: Date): boolean {
+  if (!task.recurringRule) {
+    return Boolean(task.dueDate && isSameLocalDay(task.dueDate, today));
+  }
 
-function getStartOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return appearsInToday(task.recurringRule, today);
 }
 
 export function getWeekRange(today: Date): { start: Date; end: Date } {
-  const start = getStartOfDay(today);
-  const day = start.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  start.setDate(start.getDate() + diff);
-
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
+  const start = startOfLocalWeek(today);
+  const end = endOfLocalWeek(today);
 
   return { start, end };
 }
 
 export function computeDailyProgress(tasks: TaskListItem[], today: Date): ProgressMetrics {
-  const dueTodayTasks = tasks.filter((task) => getTodayTasks([task], today).length > 0);
+  const dueTodayTasks = tasks.filter((task) => isTaskDueToday(task, today));
   const completed = dueTodayTasks.filter((task) => task.isCompleted).length;
   const total = dueTodayTasks.length;
 
@@ -81,7 +72,7 @@ export function computeWeeklyPointsProgress(
 }
 
 export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3): TaskListItem[] {
-  const todayStart = getStartOfDay(today);
+  const todayStart = startOfLocalDay(today);
   const incomplete = tasks.filter((task) => !task.isCompleted);
 
   const ranked = [...incomplete].sort((a, b) => {
@@ -94,8 +85,8 @@ export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3):
       return aOverdue ? -1 : 1;
     }
 
-    const aToday = aDue ? isSameDay(aDue, todayStart) : false;
-    const bToday = bDue ? isSameDay(bDue, todayStart) : false;
+    const aToday = aDue ? isSameLocalDay(aDue, todayStart) : false;
+    const bToday = bDue ? isSameLocalDay(bDue, todayStart) : false;
     if (aToday !== bToday) {
       return aToday ? -1 : 1;
     }
@@ -115,17 +106,15 @@ export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3):
 }
 
 export function getTodayTasks(tasks: TaskListItem[], today: Date): TaskListItem[] {
-  return tasks.filter((task) => {
-    if (!task.recurringRule) {
-      return Boolean(task.dueDate && isSameDay(task.dueDate, today));
-    }
-
-    return appearsInToday(task.recurringRule, today);
-  });
+  return tasks.filter((task) => !task.isCompleted && isTaskDueToday(task, today));
 }
 
 export function getWeeklyTasks(tasks: TaskListItem[], today = new Date()): TaskListItem[] {
   return tasks.filter((task) => {
+    if (task.isCompleted) {
+      return false;
+    }
+
     const rule = task.recurringRule;
     if (!rule) {
       return false;

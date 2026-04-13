@@ -1,3 +1,4 @@
+import { startOfLocalDay } from '@/lib/dates';
 import type { RecurrenceInput } from '@/lib/validation';
 
 export type QuickAddDestination = 'task' | 'habit';
@@ -12,10 +13,6 @@ export type ParsedQuickAdd = {
 
 const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-function startOfLocalDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
 function nextWeekday(baseDate: Date, dayName: string): Date | null {
   const targetIndex = weekdays.indexOf(dayName.toLowerCase());
   if (targetIndex < 0) {
@@ -23,8 +20,7 @@ function nextWeekday(baseDate: Date, dayName: string): Date | null {
   }
 
   const start = startOfLocalDay(baseDate);
-  const delta = (targetIndex - start.getDay() + 7) % 7;
-  const offset = delta === 0 ? 7 : delta;
+  const offset = (targetIndex - start.getDay() + 7) % 7;
   const result = new Date(start);
   result.setDate(start.getDate() + offset);
   return result;
@@ -34,7 +30,7 @@ function cleanTitle(value: string): string {
   return value
     .replace(/\b\d+x\s+this week\b/i, '')
     .replace(/\bthis week\b/i, '')
-    .replace(/\btomorrow\b/i, '')
+    .replace(/\b(today|tonight|tomorrow)\b/i, '')
     .replace(/\bdaily\b/i, '')
     .replace(/\bmonthly\b/i, '')
     .replace(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i, '')
@@ -86,7 +82,9 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
     recurrence = { type: 'monthly', frequency: 1 };
   }
 
-  if (/\btomorrow\b/i.test(raw)) {
+  if (/\b(today|tonight)\b/i.test(raw)) {
+    dueDate = startOfLocalDay(now);
+  } else if (/\btomorrow\b/i.test(raw)) {
     dueDate = startOfLocalDay(now);
     dueDate.setDate(dueDate.getDate() + 1);
   }

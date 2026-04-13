@@ -8,6 +8,7 @@ export type TaskListItem = {
   notes: string | null;
   categoryId: number | null;
   dueDate: Date | null;
+  reminderAt: Date | null;
   pointValue: number;
   isCompleted: boolean;
   isArchived: boolean;
@@ -40,7 +41,8 @@ export type TaskCompletionPlan = {
 };
 
 function toTaskListItem(task: any, weekStart: Date, weekEnd: Date): TaskListItem {
-  const weeklyTarget = task.recurringRule?.type === 'weekly' ? task.recurringRule.frequency ?? 1 : null;
+  const weeklyTarget =
+    task.recurringRule?.type === 'weekly' ? (task.recurringRule.frequency ?? 1) : null;
   const weeklyCompleted =
     task.recurringRule?.type === 'weekly'
       ? task.instances.filter((instance: { date: Date; completed: boolean }) => {
@@ -54,6 +56,7 @@ function toTaskListItem(task: any, weekStart: Date, weekEnd: Date): TaskListItem
     notes: task.notes,
     categoryId: task.categoryId,
     dueDate: task.dueDate,
+    reminderAt: task.reminderAt,
     pointValue: task.pointValue,
     isCompleted: task.isCompleted,
     isArchived: task.isArchived,
@@ -133,6 +136,7 @@ export async function createTask(input: TaskInput): Promise<TaskListItem> {
       notes: valid.notes,
       categoryId: valid.categoryId,
       dueDate: valid.dueDate,
+      reminderAt: valid.reminderAt,
       pointValue: valid.pointValue,
       recurringRule: valid.recurrence
         ? {
@@ -167,6 +171,7 @@ export async function updateTask(taskId: number, input: TaskInput): Promise<Task
         notes: valid.notes,
         categoryId: valid.categoryId,
         dueDate: valid.dueDate,
+        reminderAt: valid.reminderAt,
         pointValue: valid.pointValue,
       },
       include: {

@@ -23,30 +23,32 @@ model Task {
   notes       String?
   categoryId  Int?
   dueDate     DateTime?
+  reminderAt  DateTime?
   pointValue  Int             @default(5)
   isCompleted Boolean         @default(false)
   isArchived  Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  category       Category?       @relation(fields: [categoryId], references: [id])
-  recurringRule  RecurringRule?
-  instances      TaskInstance[]
+  category      Category?       @relation(fields: [categoryId], references: [id])
+  recurringRule RecurringRule?
+  instances     TaskInstance[]
 
   @@index([categoryId])
   @@index([dueDate])
+  @@index([reminderAt])
 }
 
 model RecurringRule {
-  id          Int           @id @default(autoincrement())
-  taskId       Int          @unique
+  id         Int      @id @default(autoincrement())
+  taskId      Int     @unique
   // Allowed values: daily, weekdays, weekly, monthly, yearly
-  type         String
-  frequency    Int?
-  daysOfWeek   String?
-  dayOfMonth   Int?
-  monthOfYear  Int?
-  createdAt    DateTime      @default(now())
+  type        String
+  frequency   Int?
+  daysOfWeek  String?
+  dayOfMonth  Int?
+  monthOfYear Int?
+  createdAt   DateTime @default(now())
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
@@ -66,16 +68,16 @@ model TaskInstance {
 }
 
 model Habit {
-  id            Int                 @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   title         String
   notes         String?
   categoryId    Int?
   // Allowed values: daily, weekly
   frequencyType String
-  targetCount   Int                 @default(1)
-  pointValue    Int                 @default(5)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  targetCount   Int      @default(1)
+  pointValue    Int      @default(5)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   category    Category?          @relation(fields: [categoryId], references: [id])
   completions HabitCompletion[]
@@ -105,12 +107,28 @@ model Note {
 }
 
 model PointEvent {
-  id         Int             @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   amount     Int
   // Allowed values: task, habit, bonus
   sourceType String
   sourceId   Int?
-  createdAt  DateTime        @default(now())
+  createdAt  DateTime @default(now())
 
   @@index([sourceType, sourceId])
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model RewardMilestone {
+  id        Int      @id @default(autoincrement())
+  label     String
+  points    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([points])
 }

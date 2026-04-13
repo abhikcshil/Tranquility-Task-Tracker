@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { quickAddAction } from '@/app/actions';
 import { HabitList } from '@/components/ui/habit-list';
 import { NoteList } from '@/components/ui/note-list';
 import { ProgressRing } from '@/components/ui/progress-ring';
@@ -12,53 +13,88 @@ import {
   getTodayTasks,
   getWeekRange,
   getWeeklyTasks,
-  WEEKLY_POINTS_GOAL,
 } from '@/lib/dashboard';
+import { computeMilestoneProgress } from '@/lib/settings';
 import { getHabits } from '@/services/habitService';
 import { getNotes, getPinnedNotes } from '@/services/noteService';
 import { getCurrentWeekPoints } from '@/services/pointService';
+import { getUpcomingReminders } from '@/services/reminderService';
+import { getRewardMilestones, getWeeklyPointsGoal } from '@/services/settingsService';
 import { getTasks } from '@/services/taskService';
 
 export default async function DashboardPage() {
-  const [tasks, habits, pinnedNotes, notes, weekPoints] = await Promise.all([
-    getTasks(),
-    getHabits(),
-    getPinnedNotes(),
-    getNotes(),
-    getCurrentWeekPoints(),
-  ]);
+  const [tasks, habits, pinnedNotes, notes, weekPoints, weeklyGoal, milestones, upcomingReminders] =
+    await Promise.all([
+      getTasks(),
+      getHabits(),
+      getPinnedNotes(),
+      getNotes(),
+      getCurrentWeekPoints(),
+      getWeeklyPointsGoal(),
+      getRewardMilestones(),
+      getUpcomingReminders(),
+    ]);
 
   const today = new Date();
   const { start, end } = getWeekRange(today);
 
   const dailyProgress = computeDailyProgress(tasks, today);
   const weeklyTaskProgress = computeWeeklyTaskProgress(tasks);
-  const weeklyPointsProgress = computeWeeklyPointsProgress(weekPoints, WEEKLY_POINTS_GOAL);
+  const weeklyPointsProgress = computeWeeklyPointsProgress(weekPoints, weeklyGoal);
 
   const todayTasks = getTodayTasks(tasks, today);
   const weeklyTasks = getWeeklyTasks(tasks);
   const pinnedNotesPreview = getPinnedNotesPreview(pinnedNotes);
+  const milestoneProgress = computeMilestoneProgress(milestones, weekPoints);
 
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
         <p className="text-xs uppercase tracking-wide text-zinc-400">Tranquility Dashboard</p>
-        <h1 className="mt-1 text-2xl font-semibold text-zinc-100">Good focus, one step at a time</h1>
+        <h1 className="mt-1 text-2xl font-semibold text-zinc-100">
+          Good focus, one step at a time
+        </h1>
         <p className="mt-1 text-sm text-zinc-400">
-          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} • Week of{' '}
-          {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -{' '}
+          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}{' '}
+          • Week of {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -{' '}
           {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </p>
         <p className="mt-3 text-sm text-zinc-300">
-          {todayTasks.length} today task(s), {weeklyTasks.length} weekly task(s), {habits.length} habit(s), {notes.length} note(s).
+          {todayTasks.length} today task(s), {weeklyTasks.length} weekly task(s), {habits.length}{' '}
+          habit(s), {notes.length} note(s).
         </p>
-        <Link
-          href="/focus"
-          className="mt-4 inline-flex rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
-        >
-          Open Focus Mode
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/focus"
+            className="inline-flex rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
+          >
+            Open Focus Mode
+          </Link>
+          <Link
+            href="/weekly-review"
+            className="inline-flex rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200"
+          >
+            Weekly Review
+          </Link>
+        </div>
       </section>
+
+      <SectionCard title="Quick Add" description="Natural-feeling capture for tasks and habits.">
+        <form action={quickAddAction} className="flex flex-col gap-2 sm:flex-row">
+          <input
+            required
+            name="quickAdd"
+            placeholder='Try: "Call mom tomorrow" or "Take vitamins daily"'
+            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+          />
+          <button
+            type="submit"
+            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
+          >
+            Capture
+          </button>
+        </form>
+      </SectionCard>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <ProgressRing
@@ -77,6 +113,45 @@ export default async function DashboardPage() {
           subtitle={`${weeklyPointsProgress.completed}/${weeklyPointsProgress.total} pts`}
         />
       </section>
+
+      <SectionCard title="Upcoming reminders" description="Pending reminders from task scheduling.">
+        {upcomingReminders.length === 0 ? (
+          <p className="text-sm text-zinc-400">No upcoming reminders.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {upcomingReminders.map((task) => (
+              <li
+                key={task.id}
+                className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-zinc-200"
+              >
+                {task.title} • {task.reminderAt?.toLocaleString()}
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Reward milestones" description="Your weekly motivation ladder.">
+        {milestoneProgress.length === 0 ? (
+          <p className="text-sm text-zinc-400">No milestones yet. Add them in Settings.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {milestoneProgress.map((milestone) => (
+              <li
+                key={milestone.id}
+                className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2"
+              >
+                <span className="text-zinc-100">
+                  {milestone.points} pts = {milestone.label}
+                </span>
+                <span className={milestone.reached ? 'text-emerald-300' : 'text-zinc-400'}>
+                  {milestone.reached ? 'Reached' : 'Pending'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
 
       <SectionCard title="Today tasks" description="One-time and due-now items.">
         <TaskList

@@ -20,6 +20,7 @@ export async function quickAddCapture(raw: string) {
   await createTask({
     title: parsed.title,
     dueDate: parsed.dueDate,
+    reminderAt: parsed.reminderAt,
     recurrence: parsed.recurrence,
     pointValue: 5,
     notes: null,

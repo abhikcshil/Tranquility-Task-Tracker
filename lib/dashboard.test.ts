@@ -109,6 +109,23 @@ test('getTodayTasks includes manual due-today tasks and excludes completed tasks
   );
 });
 
+test('getTodayTasks includes tasks with dueDate today even when reminderAt is also set', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({
+      id: 99,
+      dueDate: new Date(2026, 3, 13, 0, 0, 0, 0),
+      reminderAt: new Date(2026, 3, 13, 22, 30, 0, 0),
+      isCompleted: false,
+    }),
+  ];
+
+  assert.deepEqual(
+    getTodayTasks(tasks, today).map((task) => task.id),
+    [99],
+  );
+});
+
 test('selectFocusTasks prioritizes overdue, then today, then oldest incomplete', () => {
   const today = new Date('2026-04-13T12:00:00.000Z');
   const tasks = [

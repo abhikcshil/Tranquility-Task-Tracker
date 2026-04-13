@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { archiveTask, createTask, toggleTaskCompletion, updateTask } from '@/services/taskService';
+import type { RecurrenceInput } from '@/lib/validation';
 
 function parseOptionalInt(value: FormDataEntryValue | null): number | null {
   if (typeof value !== 'string' || value.length === 0) {
@@ -21,6 +22,27 @@ function parseOptionalString(value: FormDataEntryValue | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function parseRecurrence(formData: FormData): RecurrenceInput | null {
+  const type = String(formData.get('recurrenceType') ?? 'none') as RecurrenceInput['type'];
+  if (type === 'none') {
+    return null;
+  }
+
+  const recurrence: RecurrenceInput = {
+    type,
+    frequency: parseOptionalInt(formData.get('recurrenceFrequency')),
+  };
+
+  if (type === 'weekdays') {
+    recurrence.weekdays = formData
+      .getAll('weekdays')
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value));
+  }
+
+  return recurrence;
+}
+
 export async function createTaskAction(formData: FormData) {
   await createTask({
     title: String(formData.get('title') ?? ''),
@@ -28,6 +50,7 @@ export async function createTaskAction(formData: FormData) {
     categoryId: parseOptionalInt(formData.get('categoryId')),
     dueDate: parseOptionalString(formData.get('dueDate')),
     pointValue: parseOptionalInt(formData.get('pointValue')),
+    recurrence: parseRecurrence(formData),
   });
 
   revalidatePath('/tasks');
@@ -48,6 +71,7 @@ export async function updateTaskAction(formData: FormData) {
     categoryId: parseOptionalInt(formData.get('categoryId')),
     dueDate: parseOptionalString(formData.get('dueDate')),
     pointValue: parseOptionalInt(formData.get('pointValue')),
+    recurrence: parseRecurrence(formData),
   });
 
   revalidatePath('/tasks');

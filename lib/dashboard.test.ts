@@ -1,12 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  computeDailyProgress,
-  computeWeeklyPointsProgress,
-  computeWeeklyTaskProgress,
-  selectFocusTasks,
-} from '@/lib/dashboard';
+import { computeDailyProgress, computeWeeklyPointsProgress, computeWeeklyTaskProgress, getTodayTasks, selectFocusTasks } from '@/lib/dashboard';
 import type { TaskListItem } from '@/services/taskService';
 
 function makeTask(overrides: Partial<TaskListItem>): TaskListItem {
@@ -22,43 +17,37 @@ function makeTask(overrides: Partial<TaskListItem>): TaskListItem {
     createdAt: new Date('2026-04-01T10:00:00.000Z'),
     category: null,
     recurringRule: null,
+    weeklyProgress: null,
     ...overrides,
   };
 }
 
-test('computeDailyProgress counts only one-time tasks due today', () => {
+test('computeDailyProgress counts due and recurring-today tasks', () => {
   const today = new Date('2026-04-13T09:00:00.000Z');
   const tasks = [
     makeTask({ id: 1, dueDate: new Date('2026-04-13T08:00:00.000Z'), isCompleted: true }),
-    makeTask({ id: 2, dueDate: new Date('2026-04-13T08:00:00.000Z'), isCompleted: false }),
-    makeTask({ id: 3, dueDate: new Date('2026-04-14T08:00:00.000Z'), isCompleted: true }),
-    makeTask({
-      id: 4,
-      dueDate: new Date('2026-04-13T08:00:00.000Z'),
-      recurringRule: { type: 'weekly', frequency: 1 },
-      isCompleted: true,
-    }),
+    makeTask({ id: 2, recurringRule: { type: 'daily', frequency: 1, daysOfWeek: null }, isCompleted: false }),
+    makeTask({ id: 3, recurringRule: { type: 'weekdays', frequency: 1, daysOfWeek: '1,3,5' }, isCompleted: true }),
   ];
 
   const result = computeDailyProgress(tasks, today);
 
-  assert.equal(result.completed, 1);
-  assert.equal(result.total, 2);
-  assert.equal(result.percent, 50);
+  assert.equal(result.completed, 2);
+  assert.equal(result.total, 3);
+  assert.equal(result.percent, 67);
 });
 
-test('computeWeeklyTaskProgress returns completed weekly recurring tasks', () => {
+test('computeWeeklyTaskProgress uses weekly frequency targets', () => {
   const tasks = [
-    makeTask({ id: 1, recurringRule: { type: 'weekly', frequency: 1 }, isCompleted: true }),
-    makeTask({ id: 2, recurringRule: { type: 'weekly', frequency: 1 }, isCompleted: false }),
-    makeTask({ id: 3, recurringRule: { type: 'daily', frequency: 1 }, isCompleted: true }),
+    makeTask({ id: 1, recurringRule: { type: 'weekly', frequency: 3, daysOfWeek: null }, weeklyProgress: { completed: 1, target: 3 } }),
+    makeTask({ id: 2, recurringRule: { type: 'weekly', frequency: 2, daysOfWeek: null }, weeklyProgress: { completed: 2, target: 2 } }),
   ];
 
   const result = computeWeeklyTaskProgress(tasks);
 
-  assert.equal(result.completed, 1);
-  assert.equal(result.total, 2);
-  assert.equal(result.percent, 50);
+  assert.equal(result.completed, 3);
+  assert.equal(result.total, 5);
+  assert.equal(result.percent, 60);
 });
 
 test('computeWeeklyPointsProgress clamps percent to 100', () => {
@@ -67,6 +56,19 @@ test('computeWeeklyPointsProgress clamps percent to 100', () => {
   assert.equal(result.completed, 120);
   assert.equal(result.total, 100);
   assert.equal(result.percent, 100);
+});
+
+test('getTodayTasks includes daily recurring tasks', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({ id: 1, recurringRule: { type: 'daily', frequency: 1, daysOfWeek: null } }),
+    makeTask({ id: 2, recurringRule: { type: 'weekly', frequency: 1, daysOfWeek: null } }),
+  ];
+
+  assert.deepEqual(
+    getTodayTasks(tasks, today).map((task) => task.id),
+    [1],
+  );
 });
 
 test('selectFocusTasks prioritizes overdue, then today, then oldest incomplete', () => {

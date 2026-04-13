@@ -95,6 +95,7 @@ async function main() {
       categoryId: categoryByName.Health,
       frequencyType: 'weekly',
       targetCount: 3,
+      pointValue: 6,
     },
   });
 

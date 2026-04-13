@@ -1,9 +1,18 @@
+import type { RecurringType } from '@/lib/recurrence';
+
+export type RecurrenceInput = {
+  type: 'none' | RecurringType;
+  frequency?: number | null;
+  weekdays?: number[];
+};
+
 export type TaskInput = {
   title: string;
   notes?: string | null;
   categoryId?: number | null;
   dueDate?: string | Date | null;
   pointValue?: number | null;
+  recurrence?: RecurrenceInput | null;
 };
 
 export type NoteInput = {
@@ -14,6 +23,37 @@ export type NoteInput = {
 function normalizeOptionalText(value: string | null | undefined): string | null {
   const trimmed = value?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
+}
+
+export function validateRecurrenceInput(input: RecurrenceInput | null | undefined) {
+  if (!input || input.type === 'none') {
+    return null;
+  }
+
+  const frequency = input.frequency ?? null;
+  if (frequency !== null && (!Number.isInteger(frequency) || frequency <= 0)) {
+    throw new Error('Recurring frequency must be a positive integer.');
+  }
+
+  const recurrence = {
+    type: input.type,
+    frequency,
+    daysOfWeek: null as string | null,
+  };
+
+  if (input.type === 'weekdays') {
+    const weekdays = input.weekdays ?? [];
+    const unique = [...new Set(weekdays)].sort((a, b) => a - b);
+    const allValid = unique.every((day) => Number.isInteger(day) && day >= 0 && day <= 6);
+
+    if (!allValid || unique.length === 0) {
+      throw new Error('Weekday recurrence requires valid weekday values.');
+    }
+
+    recurrence.daysOfWeek = unique.join(',');
+  }
+
+  return recurrence;
 }
 
 export function validateTaskInput(input: TaskInput) {
@@ -47,6 +87,7 @@ export function validateTaskInput(input: TaskInput) {
     categoryId,
     dueDate,
     pointValue: Math.round(pointValue),
+    recurrence: validateRecurrenceInput(input.recurrence),
   };
 }
 

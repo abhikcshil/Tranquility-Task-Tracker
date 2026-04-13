@@ -1,91 +1,102 @@
-import { PageShell } from '@/components/page-shell';
+import Link from 'next/link';
+import { HabitList } from '@/components/ui/habit-list';
+import { NoteList } from '@/components/ui/note-list';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { SectionCard } from '@/components/ui/section-card';
+import { TaskList } from '@/components/ui/task-list';
+import {
+  computeDailyProgress,
+  computeWeeklyPointsProgress,
+  computeWeeklyTaskProgress,
+  getPinnedNotesPreview,
+  getTodayTasks,
+  getWeekRange,
+  getWeeklyTasks,
+  WEEKLY_POINTS_GOAL,
+} from '@/lib/dashboard';
 import { getHabits } from '@/services/habitService';
-import { getPinnedNotes } from '@/services/noteService';
+import { getNotes, getPinnedNotes } from '@/services/noteService';
+import { getCurrentWeekPoints } from '@/services/pointService';
 import { getTasks } from '@/services/taskService';
 
 export default async function DashboardPage() {
-  const [tasks, habits, pinnedNotes] = await Promise.all([getTasks(), getHabits(), getPinnedNotes()]);
+  const [tasks, habits, pinnedNotes, notes, weekPoints] = await Promise.all([
+    getTasks(),
+    getHabits(),
+    getPinnedNotes(),
+    getNotes(),
+    getCurrentWeekPoints(),
+  ]);
+
   const today = new Date();
+  const { start, end } = getWeekRange(today);
 
-  const todayTasks = tasks.filter((task) => {
-    if (!task.dueDate) {
-      return false;
-    }
+  const dailyProgress = computeDailyProgress(tasks, today);
+  const weeklyTaskProgress = computeWeeklyTaskProgress(tasks);
+  const weeklyPointsProgress = computeWeeklyPointsProgress(weekPoints, WEEKLY_POINTS_GOAL);
 
-    return task.dueDate.toDateString() === today.toDateString();
-  });
-
-  const weeklyTasks = tasks.filter((task) => task.recurringRule?.type === 'weekly');
+  const todayTasks = getTodayTasks(tasks, today);
+  const weeklyTasks = getWeeklyTasks(tasks);
+  const pinnedNotesPreview = getPinnedNotesPreview(pinnedNotes);
 
   return (
-    <PageShell title="Dashboard" description="A quick look at today and this week.">
-      <div className="space-y-5 text-sm text-zinc-200">
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-zinc-100">Today tasks</h2>
-          {todayTasks.length === 0 ? (
-            <p className="text-zinc-400">No tasks due today.</p>
-          ) : (
-            <ul className="space-y-2">
-              {todayTasks.map((task) => (
-                <li key={task.id} className="rounded-lg border border-zinc-800 p-3">
-                  <p className="font-medium">{task.title}</p>
-                  {task.category ? <p className="text-xs text-zinc-400">{task.category.name}</p> : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <p className="text-xs uppercase tracking-wide text-zinc-400">Tranquility Dashboard</p>
+        <h1 className="mt-1 text-2xl font-semibold text-zinc-100">Good focus, one step at a time</h1>
+        <p className="mt-1 text-sm text-zinc-400">
+          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} • Week of{' '}
+          {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -{' '}
+          {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+        </p>
+        <p className="mt-3 text-sm text-zinc-300">
+          {todayTasks.length} today task(s), {weeklyTasks.length} weekly task(s), {habits.length} habit(s), {notes.length} note(s).
+        </p>
+        <Link
+          href="/focus"
+          className="mt-4 inline-flex rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
+        >
+          Open Focus Mode
+        </Link>
+      </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-zinc-100">Weekly tasks</h2>
-          {weeklyTasks.length === 0 ? (
-            <p className="text-zinc-400">No weekly flexible tasks yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {weeklyTasks.map((task) => (
-                <li key={task.id} className="rounded-lg border border-zinc-800 p-3">
-                  <p className="font-medium">{task.title}</p>
-                  <p className="text-xs text-zinc-400">Recurring weekly placeholder</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <ProgressRing
+          label="Daily progress"
+          value={dailyProgress.percent}
+          subtitle={`${dailyProgress.completed}/${dailyProgress.total} complete`}
+        />
+        <ProgressRing
+          label="Weekly tasks"
+          value={weeklyTaskProgress.percent}
+          subtitle={`${weeklyTaskProgress.completed}/${weeklyTaskProgress.total} complete`}
+        />
+        <ProgressRing
+          label="Weekly points"
+          value={weeklyPointsProgress.percent}
+          subtitle={`${weeklyPointsProgress.completed}/${weeklyPointsProgress.total} pts`}
+        />
+      </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-zinc-100">Habits</h2>
-          {habits.length === 0 ? (
-            <p className="text-zinc-400">No habits yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {habits.map((habit) => (
-                <li key={habit.id} className="rounded-lg border border-zinc-800 p-3">
-                  <p className="font-medium">{habit.title}</p>
-                  <p className="text-xs text-zinc-400">
-                    {habit.completionCount} completion(s), target {habit.targetCount}/{habit.frequencyType}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+      <SectionCard title="Today tasks" description="One-time and due-now items.">
+        <TaskList tasks={todayTasks} emptyTitle="No tasks due today" emptyMessage="Enjoy the extra room in your day." />
+      </SectionCard>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-zinc-100">Pinned notes</h2>
-          {pinnedNotes.length === 0 ? (
-            <p className="text-zinc-400">No pinned notes.</p>
-          ) : (
-            <ul className="space-y-2">
-              {pinnedNotes.map((note) => (
-                <li key={note.id} className="rounded-lg border border-zinc-800 p-3">
-                  <p className="font-medium">{note.title}</p>
-                  <p className="text-xs text-zinc-400">{note.content}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </PageShell>
+      <SectionCard title="This week tasks" description="Flexible weekly tasks.">
+        <TaskList tasks={weeklyTasks} emptyTitle="No weekly tasks" emptyMessage="Weekly recurring tasks will show up here." />
+      </SectionCard>
+
+      <SectionCard title="Habits" description="Progress snapshots from your current habits.">
+        <HabitList habits={habits} />
+      </SectionCard>
+
+      <SectionCard title="Pinned notes" description="Keep key context visible.">
+        <NoteList
+          notes={pinnedNotesPreview}
+          emptyTitle="No pinned notes"
+          emptyMessage="Pin a note in a later phase to keep it at the top."
+        />
+      </SectionCard>
+    </div>
   );
 }

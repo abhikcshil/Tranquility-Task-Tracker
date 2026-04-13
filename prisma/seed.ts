@@ -44,18 +44,21 @@ async function main() {
         notes: 'Finish chapter 6 problem set',
         categoryId: categoryByName.School,
         dueDate: tomorrow,
+        pointValue: 10,
       },
     }),
     prisma.task.create({
       data: {
         title: 'Draft weekly project summary',
         categoryId: categoryByName.Work,
+        pointValue: 5,
       },
     }),
     prisma.task.create({
       data: {
         title: 'Clean desk area',
         categoryId: categoryByName.Home,
+        pointValue: 3,
       },
     }),
     prisma.task.create({
@@ -63,6 +66,7 @@ async function main() {
         title: 'Do laundry',
         notes: 'Flexible completion any day this week',
         categoryId: categoryByName.Home,
+        pointValue: 8,
       },
     }),
   ]);

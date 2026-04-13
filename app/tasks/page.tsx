@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components/ui/section-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { toDateInputValue } from '@/lib/dates';
 import {
   archiveTaskAction,
   createTaskAction,
@@ -195,7 +196,7 @@ export default async function TasksPage() {
                     <input
                       type="date"
                       name="dueDate"
-                      defaultValue={task.dueDate ? task.dueDate.toISOString().split('T')[0] : ''}
+                      defaultValue={task.dueDate ? toDateInputValue(task.dueDate) : ''}
                       className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
                     />
                     <input

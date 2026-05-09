@@ -14,10 +14,6 @@ export type ParsedQuickAdd = {
 
 const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-function startOfLocalDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
 function withLocalTime(date: Date, hours: number, minutes: number): Date {
   const result = startOfLocalDay(date);
   result.setHours(hours, minutes, 0, 0);
@@ -70,6 +66,7 @@ function cleanTitle(value: string): string {
     .replace(/\btoday\b/i, '')
     .replace(/\btonight\b/i, '')
     .replace(/\btomorrow\b/i, '')
+    .replace(/\bnight\b/i, '')
     .replace(/\bdaily\b/i, '')
     .replace(/\bmonthly\b/i, '')
     .replace(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i, '')
@@ -151,8 +148,6 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
     recurrence = { type: 'monthly', frequency: 1 };
   }
 
-  const hasTodayToken = /\btoday\b/i.test(raw);
-  const hasTonightToken = /\btonight\b/i.test(raw);
   const hasNightToken = /\bnight\b/i.test(raw);
 
   if (/\b(today|tonight)\b/i.test(raw)) {
@@ -172,7 +167,7 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
 
   if (explicitTime && dueDate) {
     reminderAt = withLocalTime(dueDate, explicitTime.hours, explicitTime.minutes);
-  } else if (/\btonight\b/i.test(raw) && dueDate) {
+  } else if ((/\btonight\b/i.test(raw) || hasNightToken) && dueDate) {
     reminderAt = withLocalTime(dueDate, 20, 0);
   }
 

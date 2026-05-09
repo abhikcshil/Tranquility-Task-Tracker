@@ -4,7 +4,7 @@ function padDatePart(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-export function parseDateOnlyAsLocalDay(value: string): Date | null {
+export function parseLocalDateInput(value: string): Date | null {
   const match = value.match(DATE_ONLY_PATTERN);
   if (!match) {
     return null;
@@ -26,6 +26,8 @@ export function parseDateOnlyAsLocalDay(value: string): Date | null {
   return date;
 }
 
+export const parseDateOnlyAsLocalDay = parseLocalDateInput;
+
 export function parseDateInput(value: string | Date, fieldName: string): Date {
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) {
@@ -35,7 +37,7 @@ export function parseDateInput(value: string | Date, fieldName: string): Date {
     return value;
   }
 
-  const dateOnly = parseDateOnlyAsLocalDay(value);
+  const dateOnly = parseLocalDateInput(value);
   const parsed = dateOnly ?? new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
@@ -45,11 +47,41 @@ export function parseDateInput(value: string | Date, fieldName: string): Date {
   return parsed;
 }
 
+export function normalizeDateInput(value: string | Date): Date {
+  return parseDateInput(value, 'Date');
+}
+
+export function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function endOfLocalDay(date: Date): Date {
+  const end = startOfLocalDay(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
+export function startOfLocalWeek(date: Date): Date {
+  const start = startOfLocalDay(date);
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diff);
+  return start;
+}
+
+export function endOfLocalWeek(date: Date): Date {
+  const end = startOfLocalWeek(date);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
 export function isSameLocalDay(dateA: Date, dateB: Date): boolean {
   return (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
+    (dateA.getFullYear() === dateB.getFullYear() &&
+      dateA.getMonth() === dateB.getMonth() &&
+      dateA.getDate() === dateB.getDate()) ||
+    isSameUtcDay(dateA, dateB)
   );
 }
 

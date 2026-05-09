@@ -1,4 +1,4 @@
-import { isDueOnDay } from '@/lib/dates';
+import { endOfLocalWeek, isDueOnDay, startOfLocalWeek } from '@/lib/dates';
 import { appearsInMonth, appearsInToday, appearsInWeek, appearsInYear } from '@/lib/recurrence';
 import { getTaskVisualStatus } from '@/lib/task-visuals';
 import type { NoteListItem } from '@/services/noteService';
@@ -28,7 +28,7 @@ export function getWeekRange(today: Date): { start: Date; end: Date } {
 }
 
 export function computeDailyProgress(tasks: TaskListItem[], today: Date): ProgressMetrics {
-  const dueTodayTasks = tasks.filter((task) => isTaskDueToday(task, today));
+  const dueTodayTasks = tasks.filter((task) => getTodayTasks([task], today).length > 0);
   const completed = dueTodayTasks.filter((task) => task.isCompleted).length;
   const total = dueTodayTasks.length;
 

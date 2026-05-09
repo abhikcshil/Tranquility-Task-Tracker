@@ -1,4 +1,5 @@
 import type { RecurringType } from '@/lib/recurrence';
+import { parseDateInput } from '@/lib/dates';
 
 export type RecurrenceInput = {
   type: 'none' | RecurringType;
@@ -62,12 +63,7 @@ export function validateReminderDate(value: string | Date | null | undefined): D
     return null;
   }
 
-  const reminderAt = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(reminderAt.getTime())) {
-    throw new Error('Reminder date/time is invalid.');
-  }
-
-  return reminderAt;
+  return parseDateInput(value, 'Reminder date/time');
 }
 
 export function validateTaskInput(input: TaskInput) {
@@ -84,10 +80,7 @@ export function validateTaskInput(input: TaskInput) {
   const dueDateRaw = input.dueDate ?? null;
   let dueDate: Date | null = null;
   if (dueDateRaw) {
-    dueDate = dueDateRaw instanceof Date ? dueDateRaw : new Date(dueDateRaw);
-    if (Number.isNaN(dueDate.getTime())) {
-      throw new Error('Due date is invalid.');
-    }
+    dueDate = parseDateInput(dueDateRaw, 'Due date');
   }
 
   const reminderAt = validateReminderDate(input.reminderAt);

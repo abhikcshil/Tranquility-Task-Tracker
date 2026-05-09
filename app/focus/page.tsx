@@ -3,6 +3,8 @@ import { TaskList } from '@/components/ui/task-list';
 import { selectFocusTasks } from '@/lib/dashboard';
 import { getTasks } from '@/services/taskService';
 
+export const dynamic = 'force-dynamic';
+
 export default async function FocusPage() {
   const tasks = await getTasks();
   const focusTasks = selectFocusTasks(tasks, new Date(), 3);

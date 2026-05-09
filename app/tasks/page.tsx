@@ -1,12 +1,17 @@
 import { SectionCard } from '@/components/ui/section-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PointsStepper } from '@/components/ui/points-stepper';
 import {
   archiveTaskAction,
   createTaskAction,
   toggleTaskCompletionAction,
   updateTaskAction,
 } from '@/app/tasks/actions';
+import { formatDateInputValue } from '@/lib/dates';
+import { getTaskCategoryCueColor, getTaskCompletionCueColor } from '@/lib/task-visuals';
 import { getTaskCategories, getTasks } from '@/services/taskService';
+
+export const dynamic = 'force-dynamic';
 
 const recurrenceOptions = [
   { value: 'none', label: 'None' },
@@ -24,6 +29,16 @@ const weekdayOptions = [
   { value: 4, label: 'Thu' },
   { value: 5, label: 'Fri' },
 ];
+
+function formatTimeInputValue(date: Date | null): string {
+  if (!date || (date.getHours() === 0 && date.getMinutes() === 0)) {
+    return '';
+  }
+
+  return [date.getHours(), date.getMinutes()]
+    .map((value) => String(value).padStart(2, '0'))
+    .join(':');
+}
 
 export default async function TasksPage() {
   const [tasks, categories] = await Promise.all([getTasks(), getTaskCategories()]);
@@ -44,75 +59,101 @@ export default async function TasksPage() {
         </p>
       </header>
 
-      <SectionCard title="Quick add" description="Capture a new task in a few taps.">
-        <form action={createTaskAction} className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-          <input
-            required
-            name="title"
-            placeholder="Task title"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          />
-          <input
-            name="dueDate"
-            type="date"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          />
-          <input
-            name="reminderAt"
-            type="datetime-local"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          />
-          <select
-            name="categoryId"
-            defaultValue=""
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          >
-            <option value="">Uncategorized</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <input
-            name="pointValue"
-            type="number"
-            min={0}
-            defaultValue={5}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          />
-          <textarea
-            name="notes"
-            placeholder="Notes (optional)"
-            rows={2}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring sm:col-span-2"
-          />
+      <details className="group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-zinc-100">
+          <span>+ Add Task</span>
+          <span className="text-xs text-zinc-400 group-open:hidden">Expand</span>
+          <span className="hidden text-xs text-zinc-400 group-open:inline">Collapse</span>
+        </summary>
+        <form
+          action={createTaskAction}
+          className="grid min-w-0 grid-cols-1 gap-3 border-t border-zinc-800 p-4 text-sm sm:grid-cols-2"
+        >
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-zinc-400">Task title</span>
+            <input
+              required
+              name="title"
+              placeholder="Task title"
+              className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-zinc-400">Due date</span>
+            <input
+              name="dueDate"
+              type="date"
+              aria-label="Due date, mm/dd/yyyy"
+              className="block w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-zinc-400">Optional time</span>
+            <input
+              name="dueTime"
+              type="time"
+              aria-label="Optional due time"
+              className="block w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+            />
+          </label>
+          <label className="min-w-0 space-y-1">
+            <span className="text-xs text-zinc-400">Category</span>
+            <select
+              name="categoryId"
+              defaultValue=""
+              className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+            >
+              <option value="">Uncategorized</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="min-w-0 space-y-1 sm:col-span-2">
+            <span className="text-xs text-zinc-400">Points</span>
+            <PointsStepper name="pointValue" defaultValue={5} />
+          </label>
+          <label className="min-w-0 space-y-1 sm:col-span-2">
+            <span className="text-xs text-zinc-400">Notes</span>
+            <textarea
+              name="notes"
+              placeholder="Notes (optional)"
+              rows={2}
+              className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
+            />
+          </label>
 
-          <details className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-xs sm:col-span-2">
-            <summary className="cursor-pointer text-zinc-400">Recurring rule (optional)</summary>
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <select
-                name="recurrenceType"
-                defaultValue="none"
-                className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-              >
-                {recurrenceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="recurrenceFrequency"
-                type="number"
-                min={1}
-                placeholder="Frequency (e.g. 3 for weekly)"
-                className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-              />
+          <details className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs sm:col-span-2">
+            <summary className="cursor-pointer text-zinc-400">Recurrence (optional)</summary>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="space-y-1">
+                <span className="text-zinc-500">Recurrence</span>
+                <select
+                  name="recurrenceType"
+                  defaultValue="none"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 text-zinc-100"
+                >
+                  {recurrenceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-zinc-500">Frequency</span>
+                <input
+                  name="recurrenceFrequency"
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 3 for weekly"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 text-zinc-100"
+                />
+              </label>
               <div className="sm:col-span-2">
-                <p className="mb-1 text-zinc-500">
-                  Weekdays selection (used only for weekdays mode)
-                </p>
+                <p className="mb-1 text-zinc-500">Weekdays</p>
                 <div className="flex flex-wrap gap-2">
                   {weekdayOptions.map((day) => (
                     <label
@@ -135,7 +176,7 @@ export default async function TasksPage() {
             Add task
           </button>
         </form>
-      </SectionCard>
+      </details>
 
       <SectionCard title="Active tasks" description="Open items that still need action.">
         {activeTasks.length === 0 ? (
@@ -147,8 +188,10 @@ export default async function TasksPage() {
                 key={task.id}
                 className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
                 style={{
-                  borderLeftColor: task.category?.color ?? '#3f3f46',
+                  borderLeftColor: getTaskCompletionCueColor(task),
                   borderLeftWidth: '3px',
+                  borderRightColor: getTaskCategoryCueColor(task),
+                  borderRightWidth: '3px',
                 }}
               >
                 <div className="mb-2 flex items-center justify-between gap-2">
@@ -187,76 +230,93 @@ export default async function TasksPage() {
                   >
                     <input type="hidden" name="taskId" value={task.id} />
                     <input
-                      required
-                      name="title"
-                      defaultValue={task.title}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    />
-                    <input
-                      type="date"
-                      name="dueDate"
-                      defaultValue={task.dueDate ? task.dueDate.toISOString().split('T')[0] : ''}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    />
-                    <input
-                      type="datetime-local"
+                      type="hidden"
                       name="reminderAt"
-                      defaultValue={
-                        task.reminderAt
-                          ? new Date(
-                              task.reminderAt.getTime() -
-                                task.reminderAt.getTimezoneOffset() * 60000,
-                            )
-                              .toISOString()
-                              .slice(0, 16)
-                          : ''
-                      }
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
+                      value={task.reminderAt ? task.reminderAt.toISOString() : ''}
                     />
-                    <select
-                      name="categoryId"
-                      defaultValue={task.categoryId ?? ''}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    >
-                      <option value="">Uncategorized</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      name="pointValue"
-                      type="number"
-                      min={0}
-                      defaultValue={task.pointValue}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    />
-                    <textarea
-                      name="notes"
-                      defaultValue={task.notes ?? ''}
-                      rows={2}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100 sm:col-span-2"
-                    />
-                    <select
-                      name="recurrenceType"
-                      defaultValue={task.recurringRule?.type ?? 'none'}
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    >
-                      {recurrenceOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      name="recurrenceFrequency"
-                      type="number"
-                      min={1}
-                      defaultValue={task.recurringRule?.frequency ?? ''}
-                      placeholder="Frequency"
-                      className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100"
-                    />
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Task title</span>
+                      <input
+                        required
+                        name="title"
+                        defaultValue={task.title}
+                        placeholder="Task title"
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Due date</span>
+                      <input
+                        type="date"
+                        name="dueDate"
+                        aria-label="Due date, mm/dd/yyyy"
+                        defaultValue={task.dueDate ? formatDateInputValue(task.dueDate) : ''}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Optional time</span>
+                      <input
+                        type="time"
+                        name="dueTime"
+                        defaultValue={formatTimeInputValue(task.dueDate)}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Category</span>
+                      <select
+                        name="categoryId"
+                        defaultValue={task.categoryId ?? ''}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      >
+                        <option value="">Uncategorized</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1 sm:col-span-2">
+                      <span className="text-zinc-500">Points</span>
+                      <PointsStepper name="pointValue" defaultValue={task.pointValue} compact />
+                    </label>
+                    <label className="space-y-1 sm:col-span-2">
+                      <span className="text-zinc-500">Notes</span>
+                      <textarea
+                        name="notes"
+                        defaultValue={task.notes ?? ''}
+                        placeholder="Notes (optional)"
+                        rows={2}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Recurrence</span>
+                      <select
+                        name="recurrenceType"
+                        defaultValue={task.recurringRule?.type ?? 'none'}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      >
+                        {recurrenceOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-zinc-500">Frequency</span>
+                      <input
+                        name="recurrenceFrequency"
+                        type="number"
+                        min={1}
+                        defaultValue={task.recurringRule?.frequency ?? ''}
+                        placeholder="Frequency"
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
+                      />
+                    </label>
                     <div className="sm:col-span-2 flex flex-wrap gap-2">
                       {weekdayOptions.map((day) => (
                         <label
@@ -303,8 +363,10 @@ export default async function TasksPage() {
                   key={task.id}
                   className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
                   style={{
-                    borderLeftColor: task.category?.color ?? '#3f3f46',
+                    borderLeftColor: getTaskCompletionCueColor(task),
                     borderLeftWidth: '3px',
+                    borderRightColor: getTaskCategoryCueColor(task),
+                    borderRightWidth: '3px',
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">

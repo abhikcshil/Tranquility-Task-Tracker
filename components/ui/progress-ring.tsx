@@ -2,17 +2,42 @@ type ProgressRingProps = {
   label: string;
   value: number;
   subtitle: string;
+  centerLabel?: string;
   size?: number;
+  variant?: 'card' | 'compact';
 };
 
-export function ProgressRing({ label, value, subtitle, size = 112 }: ProgressRingProps) {
+export function ProgressRing({
+  label,
+  value,
+  subtitle,
+  centerLabel,
+  size = 112,
+  variant = 'card',
+}: ProgressRingProps) {
   const strokeWidth = 9;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+  const containerClass =
+    variant === 'card'
+      ? 'flex flex-col items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4'
+      : 'flex min-w-0 flex-1 flex-col items-center gap-1.5';
+  const percentClass =
+    variant === 'card'
+      ? 'absolute inset-0 flex items-center justify-center text-lg font-semibold text-zinc-100'
+      : 'absolute inset-0 flex items-center justify-center text-base font-semibold text-zinc-100';
+  const labelClass =
+    variant === 'card'
+      ? 'text-sm font-medium text-zinc-100'
+      : 'text-center text-xs font-medium leading-tight text-zinc-100';
+  const subtitleClass =
+    variant === 'card'
+      ? 'text-xs text-zinc-400'
+      : 'text-center text-[11px] leading-tight text-zinc-400';
 
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+    <div className={containerClass}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           <circle
@@ -37,10 +62,10 @@ export function ProgressRing({ label, value, subtitle, size = 112 }: ProgressRin
             strokeDashoffset={offset}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-zinc-100">{value}%</div>
+        <div className={percentClass}>{centerLabel ?? `${value}%`}</div>
       </div>
-      <p className="text-sm font-medium text-zinc-100">{label}</p>
-      <p className="text-xs text-zinc-400">{subtitle}</p>
+      <p className={labelClass}>{label}</p>
+      <p className={subtitleClass}>{subtitle}</p>
     </div>
   );
 }

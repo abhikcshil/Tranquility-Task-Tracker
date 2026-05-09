@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { quickAddAction } from '@/app/actions';
 import { HabitList } from '@/components/ui/habit-list';
+import { CalendarWidget } from '@/components/ui/calendar-widget';
 import { NoteList } from '@/components/ui/note-list';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import { SectionCard } from '@/components/ui/section-card';
@@ -9,26 +10,27 @@ import {
   computeDailyProgress,
   computeWeeklyPointsProgress,
   computeWeeklyTaskProgress,
+  getDashboardTodayTasks,
   getPinnedNotesPreview,
-  getTodayTasks,
   getWeekRange,
   getWeeklyTasks,
 } from '@/lib/dashboard';
 import { computeMilestoneProgress } from '@/lib/settings';
 import { getHabits } from '@/services/habitService';
-import { getNotes, getPinnedNotes } from '@/services/noteService';
+import { getPinnedNotes } from '@/services/noteService';
 import { getCurrentWeekPoints } from '@/services/pointService';
 import { getUpcomingReminders } from '@/services/reminderService';
 import { getRewardMilestones, getWeeklyPointsGoal } from '@/services/settingsService';
 import { getTasks } from '@/services/taskService';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
-  const [tasks, habits, pinnedNotes, notes, weekPoints, weeklyGoal, milestones, upcomingReminders] =
+  const [tasks, habits, pinnedNotes, weekPoints, weeklyGoal, milestones, upcomingReminders] =
     await Promise.all([
       getTasks(),
       getHabits(),
       getPinnedNotes(),
-      getNotes(),
       getCurrentWeekPoints(),
       getWeeklyPointsGoal(),
       getRewardMilestones(),
@@ -42,10 +44,22 @@ export default async function DashboardPage() {
   const weeklyTaskProgress = computeWeeklyTaskProgress(tasks);
   const weeklyPointsProgress = computeWeeklyPointsProgress(weekPoints, weeklyGoal);
 
-  const todayTasks = getTodayTasks(tasks, today);
+  const todayTasks = getDashboardTodayTasks(tasks, today);
   const weeklyTasks = getWeeklyTasks(tasks);
   const pinnedNotesPreview = getPinnedNotesPreview(pinnedNotes);
   const milestoneProgress = computeMilestoneProgress(milestones, weekPoints);
+  const calendarTasks = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    dueDate: task.dueDate?.toISOString() ?? null,
+    createdAt: task.createdAt.toISOString(),
+    isArchived: task.isArchived,
+    isCompleted: task.isCompleted,
+    pointValue: task.pointValue,
+    category: task.category ? { name: task.category.name, color: task.category.color } : null,
+    recurringRule: task.recurringRule,
+    weeklyProgress: task.weeklyProgress,
+  }));
 
   return (
     <div className="space-y-4">
@@ -59,25 +73,52 @@ export default async function DashboardPage() {
           • Week of {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -{' '}
           {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
         </p>
-        <p className="mt-3 text-sm text-zinc-300">
-          {todayTasks.length} today task(s), {weeklyTasks.length} weekly task(s), {habits.length}{' '}
-          habit(s), {notes.length} note(s).
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href="/focus"
-            className="inline-flex rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
-          >
-            Open Focus Mode
-          </Link>
-          <Link
-            href="/weekly-review"
-            className="inline-flex rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200"
-          >
-            Weekly Review
-          </Link>
+        <div className="mt-5 flex items-start justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-950/40 px-2 py-3">
+          <ProgressRing
+            label="Daily"
+            value={dailyProgress.percent}
+            subtitle={`${dailyProgress.completed}/${dailyProgress.total}`}
+            size={76}
+            variant="compact"
+          />
+          <ProgressRing
+            label="Weekly"
+            value={weeklyTaskProgress.percent}
+            subtitle={`${weeklyTaskProgress.completed}/${weeklyTaskProgress.total}`}
+            size={76}
+            variant="compact"
+          />
+          <ProgressRing
+            label="Points"
+            value={weeklyPointsProgress.percent}
+            centerLabel={`${weekPoints} pts`}
+            subtitle={`${weeklyPointsProgress.total} goal`}
+            size={76}
+            variant="compact"
+          />
         </div>
       </section>
+
+      <SectionCard title="Today tasks" description="One-time and due-now items.">
+        <TaskList
+          tasks={todayTasks}
+          emptyTitle="No tasks due today"
+          emptyMessage="Enjoy the extra room in your day."
+          showCompletionToggle
+          showEditLink
+          compactCompleted
+        />
+      </SectionCard>
+
+      <SectionCard title="This week tasks" description="Flexible weekly tasks.">
+        <TaskList
+          tasks={weeklyTasks}
+          emptyTitle="No weekly tasks"
+          emptyMessage="Weekly recurring tasks will show up here."
+          showCompletionToggle
+          showEditLink
+        />
+      </SectionCard>
 
       <SectionCard title="Quick Add" description="Natural-feeling capture for tasks and habits.">
         <form action={quickAddAction} className="flex flex-col gap-2 sm:flex-row">
@@ -96,23 +137,9 @@ export default async function DashboardPage() {
         </form>
       </SectionCard>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ProgressRing
-          label="Daily progress"
-          value={dailyProgress.percent}
-          subtitle={`${dailyProgress.completed}/${dailyProgress.total} complete`}
-        />
-        <ProgressRing
-          label="Weekly tasks"
-          value={weeklyTaskProgress.percent}
-          subtitle={`${weeklyTaskProgress.completed}/${weeklyTaskProgress.total} complete`}
-        />
-        <ProgressRing
-          label="Weekly points"
-          value={weeklyPointsProgress.percent}
-          subtitle={`${weeklyPointsProgress.completed}/${weeklyPointsProgress.total} pts`}
-        />
-      </section>
+      <SectionCard title="Habits" description="Progress snapshots from your current habits.">
+        <HabitList habits={habits} />
+      </SectionCard>
 
       <SectionCard title="Upcoming reminders" description="Pending reminders from task scheduling.">
         {upcomingReminders.length === 0 ? (
@@ -129,6 +156,16 @@ export default async function DashboardPage() {
             ))}
           </ul>
         )}
+      </SectionCard>
+
+      <CalendarWidget tasks={calendarTasks} />
+
+      <SectionCard title="Pinned notes" description="Keep key context visible.">
+        <NoteList
+          notes={pinnedNotesPreview}
+          emptyTitle="No pinned notes"
+          emptyMessage="Pin a note in a later phase to keep it at the top."
+        />
       </SectionCard>
 
       <SectionCard title="Reward milestones" description="Your weekly motivation ladder.">
@@ -153,37 +190,20 @@ export default async function DashboardPage() {
         )}
       </SectionCard>
 
-      <SectionCard title="Today tasks" description="One-time and due-now items.">
-        <TaskList
-          tasks={todayTasks}
-          emptyTitle="No tasks due today"
-          emptyMessage="Enjoy the extra room in your day."
-          showCompletionToggle
-          showEditLink
-        />
-      </SectionCard>
-
-      <SectionCard title="This week tasks" description="Flexible weekly tasks.">
-        <TaskList
-          tasks={weeklyTasks}
-          emptyTitle="No weekly tasks"
-          emptyMessage="Weekly recurring tasks will show up here."
-          showCompletionToggle
-          showEditLink
-        />
-      </SectionCard>
-
-      <SectionCard title="Habits" description="Progress snapshots from your current habits.">
-        <HabitList habits={habits} />
-      </SectionCard>
-
-      <SectionCard title="Pinned notes" description="Keep key context visible.">
-        <NoteList
-          notes={pinnedNotesPreview}
-          emptyTitle="No pinned notes"
-          emptyMessage="Pin a note in a later phase to keep it at the top."
-        />
-      </SectionCard>
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Link
+          href="/focus"
+          className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
+        >
+          Open Focus Mode
+        </Link>
+        <Link
+          href="/weekly-review"
+          className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
+        >
+          Weekly Review
+        </Link>
+      </section>
     </div>
   );
 }

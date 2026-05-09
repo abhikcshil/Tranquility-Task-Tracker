@@ -3,6 +3,7 @@ import type { TaskListItem } from '@/services/taskService';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toggleTaskCompletionAction } from '@/app/tasks/actions';
 import { describeRecurringRule } from '@/lib/recurrence';
+import { getTaskCategoryCueColor, getTaskCompletionCueColor } from '@/lib/task-visuals';
 
 type TaskListProps = {
   tasks: TaskListItem[];
@@ -10,6 +11,7 @@ type TaskListProps = {
   emptyMessage: string;
   showCompletionToggle?: boolean;
   showEditLink?: boolean;
+  compactCompleted?: boolean;
 };
 
 export function TaskList({
@@ -18,6 +20,7 @@ export function TaskList({
   emptyMessage,
   showCompletionToggle = false,
   showEditLink = false,
+  compactCompleted = false,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return <EmptyState title={emptyTitle} message={emptyMessage} />;
@@ -26,6 +29,7 @@ export function TaskList({
   return (
     <ul className="space-y-2 text-sm">
       {tasks.map((task) => {
+        const isCompact = compactCompleted && task.isCompleted;
         const recurrence =
           task.recurringRule &&
           describeRecurringRule(task.recurringRule.type as any, task.recurringRule.frequency, task.recurringRule.daysOfWeek);
@@ -33,11 +37,18 @@ export function TaskList({
         return (
           <li
             key={task.id}
-            className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
-            style={{ borderLeftColor: task.category?.color ?? '#3f3f46', borderLeftWidth: '3px' }}
+            className={`rounded-xl border border-zinc-800 bg-zinc-950/80 ${isCompact ? 'px-3 py-2 opacity-80' : 'p-3'}`}
+            style={{
+              borderLeftColor: getTaskCompletionCueColor(task),
+              borderLeftWidth: '3px',
+              borderRightColor: getTaskCategoryCueColor(task),
+              borderRightWidth: '3px',
+            }}
           >
             <div className="flex items-start justify-between gap-3">
-              <p className="font-medium text-zinc-100">{task.title}</p>
+              <p className={`font-medium ${isCompact ? 'text-sm text-zinc-400 line-through' : 'text-zinc-100'}`}>
+                {task.title}
+              </p>
               <div className="flex items-center gap-2">
                 {showEditLink ? (
                   <Link href="/tasks" className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline">
@@ -57,15 +68,17 @@ export function TaskList({
                 ) : null}
               </div>
             </div>
-            {task.notes ? <p className="mt-1 text-xs text-zinc-400">{task.notes}</p> : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-              <span>{task.category?.name ?? 'Uncategorized'}</span>
-              {task.dueDate ? <span>Due {task.dueDate.toLocaleDateString()}</span> : null}
-              {recurrence ? <span>{recurrence.details}</span> : null}
-              {task.weeklyProgress ? <span>{task.weeklyProgress.completed}/{task.weeklyProgress.target} this week</span> : null}
-              <span>{task.pointValue} pts</span>
-              {task.isCompleted ? <span className="text-emerald-400">Completed</span> : null}
-            </div>
+            {!isCompact && task.notes ? <p className="mt-1 text-xs text-zinc-400">{task.notes}</p> : null}
+            {!isCompact ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                <span>{task.category?.name ?? 'Uncategorized'}</span>
+                {task.dueDate ? <span>Due {task.dueDate.toLocaleDateString()}</span> : null}
+                {recurrence ? <span>{recurrence.details}</span> : null}
+                {task.weeklyProgress ? <span>{task.weeklyProgress.completed}/{task.weeklyProgress.target} this week</span> : null}
+                <span>{task.pointValue} pts</span>
+                {task.isCompleted ? <span className="text-emerald-400">Completed</span> : null}
+              </div>
+            ) : null}
           </li>
         );
       })}

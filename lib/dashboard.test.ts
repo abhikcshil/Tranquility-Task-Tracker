@@ -5,6 +5,8 @@ import {
   computeDailyProgress,
   computeWeeklyPointsProgress,
   computeWeeklyTaskProgress,
+  getActiveTodayTasks,
+  getDashboardTodayTasks,
   getTodayTasks,
   selectFocusTasks,
 } from '@/lib/dashboard';
@@ -94,6 +96,46 @@ test('getTodayTasks includes daily recurring tasks', () => {
   );
 });
 
+test('getTodayTasks includes legacy UTC-midnight date-only due dates', () => {
+  const today = new Date(2026, 3, 13, 12);
+  const tasks = [makeTask({ id: 1, dueDate: new Date(Date.UTC(2026, 3, 13)) })];
+
+  assert.deepEqual(
+    getTodayTasks(tasks, today).map((task) => task.id),
+    [1],
+  );
+});
+
+test('getActiveTodayTasks includes due today tasks and excludes completed tasks', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({ id: 1, dueDate: new Date('2026-04-13T08:00:00.000Z') }),
+    makeTask({ id: 2, dueDate: new Date('2026-04-13T09:00:00.000Z'), isCompleted: true }),
+    makeTask({ id: 3, dueDate: new Date('2026-04-14T09:00:00.000Z') }),
+    makeTask({ id: 4 }),
+  ];
+
+  assert.deepEqual(
+    getActiveTodayTasks(tasks, today).map((task) => task.id),
+    [1],
+  );
+});
+
+test('getDashboardTodayTasks includes completed today tasks after active tasks', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({ id: 1, dueDate: new Date('2026-04-13T09:00:00.000Z'), isCompleted: true }),
+    makeTask({ id: 2, dueDate: new Date('2026-04-13T08:00:00.000Z') }),
+    makeTask({ id: 3, dueDate: new Date('2026-04-14T09:00:00.000Z') }),
+    makeTask({ id: 4, dueDate: new Date('2026-04-13T10:00:00.000Z'), isArchived: true }),
+  ];
+
+  assert.deepEqual(
+    getDashboardTodayTasks(tasks, today).map((task) => task.id),
+    [2, 1],
+  );
+});
+
 test('selectFocusTasks prioritizes overdue, then today, then oldest incomplete', () => {
   const today = new Date('2026-04-13T12:00:00.000Z');
   const tasks = [
@@ -114,5 +156,26 @@ test('selectFocusTasks prioritizes overdue, then today, then oldest incomplete',
   assert.deepEqual(
     result.map((task) => task.id),
     [3, 2, 4],
+  );
+});
+
+test('selectFocusTasks excludes weekly tasks that reached their target', () => {
+  const today = new Date('2026-04-13T12:00:00.000Z');
+  const tasks = [
+    makeTask({
+      id: 1,
+      recurringRule: { type: 'weekly', frequency: 3, daysOfWeek: null },
+      weeklyProgress: { completed: 3, target: 3 },
+    }),
+    makeTask({
+      id: 2,
+      recurringRule: { type: 'weekly', frequency: 3, daysOfWeek: null },
+      weeklyProgress: { completed: 2, target: 3 },
+    }),
+  ];
+
+  assert.deepEqual(
+    selectFocusTasks(tasks, today).map((task) => task.id),
+    [2],
   );
 });

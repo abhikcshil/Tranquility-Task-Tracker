@@ -22,6 +22,22 @@ function parseOptionalString(value: FormDataEntryValue | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function parsePoints(value: FormDataEntryValue | null): number {
+  const parsed = parseOptionalInt(value) ?? 5;
+  return Math.max(0, Math.round(parsed / 5) * 5);
+}
+
+function combineDueDateAndTime(formData: FormData): string | null {
+  const dueDate = parseOptionalString(formData.get('dueDate'));
+  const dueTime = parseOptionalString(formData.get('dueTime'));
+
+  if (!dueDate) {
+    return null;
+  }
+
+  return dueTime ? `${dueDate}T${dueTime}` : dueDate;
+}
+
 function parseRecurrence(formData: FormData): RecurrenceInput | null {
   const type = String(formData.get('recurrenceType') ?? 'none') as RecurrenceInput['type'];
   if (type === 'none') {
@@ -48,9 +64,9 @@ export async function createTaskAction(formData: FormData) {
     title: String(formData.get('title') ?? ''),
     notes: parseOptionalString(formData.get('notes')),
     categoryId: parseOptionalInt(formData.get('categoryId')),
-    dueDate: parseOptionalString(formData.get('dueDate')),
+    dueDate: combineDueDateAndTime(formData),
     reminderAt: parseOptionalString(formData.get('reminderAt')),
-    pointValue: parseOptionalInt(formData.get('pointValue')),
+    pointValue: parsePoints(formData.get('pointValue')),
     recurrence: parseRecurrence(formData),
   });
 
@@ -70,9 +86,9 @@ export async function updateTaskAction(formData: FormData) {
     title: String(formData.get('title') ?? ''),
     notes: parseOptionalString(formData.get('notes')),
     categoryId: parseOptionalInt(formData.get('categoryId')),
-    dueDate: parseOptionalString(formData.get('dueDate')),
+    dueDate: combineDueDateAndTime(formData),
     reminderAt: parseOptionalString(formData.get('reminderAt')),
-    pointValue: parseOptionalInt(formData.get('pointValue')),
+    pointValue: parsePoints(formData.get('pointValue')),
     recurrence: parseRecurrence(formData),
   });
 

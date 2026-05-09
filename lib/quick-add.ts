@@ -5,6 +5,7 @@ export type QuickAddDestination = 'task' | 'habit';
 export type ParsedQuickAdd = {
   title: string;
   dueDate: Date | null;
+  reminderAt: Date | null;
   recurrence: RecurrenceInput | null;
   destination: QuickAddDestination;
   habitTargetCount: number;
@@ -14,6 +15,12 @@ const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'frida
 
 function startOfLocalDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function withLocalTime(date: Date, hours: number, minutes: number): Date {
+  const result = startOfLocalDay(date);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
 }
 
 function nextWeekday(baseDate: Date, dayName: string): Date | null {
@@ -30,10 +37,38 @@ function nextWeekday(baseDate: Date, dayName: string): Date | null {
   return result;
 }
 
+function parseTimeMatch(raw: string): { hours: number; minutes: number } | null {
+  const timeMatch = raw.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+  if (!timeMatch) {
+    return null;
+  }
+
+  let hours = Number.parseInt(timeMatch[1], 10);
+  const minutes = timeMatch[2] ? Number.parseInt(timeMatch[2], 10) : 0;
+  const period = timeMatch[3].toLowerCase();
+
+  if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  if (period === 'pm' && hours !== 12) {
+    hours += 12;
+  }
+
+  if (period === 'am' && hours === 12) {
+    hours = 0;
+  }
+
+  return { hours, minutes };
+}
+
 function cleanTitle(value: string): string {
   return value
+    .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i, '')
     .replace(/\b\d+x\s+this week\b/i, '')
     .replace(/\bthis week\b/i, '')
+    .replace(/\btoday\b/i, '')
+    .replace(/\btonight\b/i, '')
     .replace(/\btomorrow\b/i, '')
     .replace(/\bdaily\b/i, '')
     .replace(/\bmonthly\b/i, '')
@@ -64,8 +99,14 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
   }
 
   let dueDate: Date | null = null;
+  let reminderAt: Date | null = null;
   let recurrence: RecurrenceInput | null = null;
   let habitTargetCount = 1;
+  const explicitTime = parseTimeMatch(raw);
+
+  if (/\btoday\b/i.test(raw) || /\btonight\b/i.test(raw)) {
+    dueDate = startOfLocalDay(now);
+  }
 
   const weeklyCountMatch = raw.match(/\b(\d+)x\s+this week\b/i);
   if (weeklyCountMatch) {
@@ -99,6 +140,12 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
     }
   }
 
+  if (explicitTime && dueDate) {
+    reminderAt = withLocalTime(dueDate, explicitTime.hours, explicitTime.minutes);
+  } else if (/\btonight\b/i.test(raw) && dueDate) {
+    reminderAt = withLocalTime(dueDate, 20, 0);
+  }
+
   const title = cleanTitle(raw);
   if (!title) {
     throw new Error('Quick add title could not be parsed.');
@@ -109,6 +156,7 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
   return {
     title,
     dueDate,
+    reminderAt,
     recurrence,
     destination,
     habitTargetCount,

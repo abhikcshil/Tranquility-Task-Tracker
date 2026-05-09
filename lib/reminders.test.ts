@@ -40,3 +40,22 @@ test('selectUpcomingReminders returns nearest pending reminders only', () => {
     [4, 1],
   );
 });
+
+test('selectUpcomingReminders includes tasks that also have due dates', () => {
+  const now = new Date('2026-04-13T09:00:00.000Z');
+  const reminders = selectUpcomingReminders(
+    [
+      makeTask({
+        id: 1,
+        dueDate: new Date('2026-04-13T00:00:00.000Z'),
+        reminderAt: new Date('2026-04-13T20:00:00.000Z'),
+      }),
+    ],
+    now,
+  );
+
+  assert.deepEqual(
+    reminders.map((item) => item.id),
+    [1],
+  );
+});

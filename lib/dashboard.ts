@@ -1,4 +1,6 @@
+import { isDueOnDay } from '@/lib/dates';
 import { appearsInMonth, appearsInToday, appearsInWeek, appearsInYear } from '@/lib/recurrence';
+import { getTaskVisualStatus } from '@/lib/task-visuals';
 import type { NoteListItem } from '@/services/noteService';
 import type { TaskListItem } from '@/services/taskService';
 
@@ -12,14 +14,6 @@ export type ProgressMetrics = {
 
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
-}
-
-function isSameDay(dateA: Date, dateB: Date): boolean {
-  return (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
-  );
 }
 
 function getStartOfDay(date: Date): Date {
@@ -82,7 +76,7 @@ export function computeWeeklyPointsProgress(
 
 export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3): TaskListItem[] {
   const todayStart = getStartOfDay(today);
-  const incomplete = tasks.filter((task) => !task.isCompleted);
+  const incomplete = tasks.filter((task) => getTaskVisualStatus(task) === 'incomplete');
 
   const ranked = [...incomplete].sort((a, b) => {
     const aDue = a.dueDate;
@@ -94,8 +88,8 @@ export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3):
       return aOverdue ? -1 : 1;
     }
 
-    const aToday = aDue ? isSameDay(aDue, todayStart) : false;
-    const bToday = bDue ? isSameDay(bDue, todayStart) : false;
+    const aToday = aDue ? isDueOnDay(aDue, todayStart) : false;
+    const bToday = bDue ? isDueOnDay(bDue, todayStart) : false;
     if (aToday !== bToday) {
       return aToday ? -1 : 1;
     }
@@ -117,11 +111,33 @@ export function selectFocusTasks(tasks: TaskListItem[], today: Date, limit = 3):
 export function getTodayTasks(tasks: TaskListItem[], today: Date): TaskListItem[] {
   return tasks.filter((task) => {
     if (!task.recurringRule) {
-      return Boolean(task.dueDate && isSameDay(task.dueDate, today));
+      return Boolean(task.dueDate && isDueOnDay(task.dueDate, today));
     }
 
     return appearsInToday(task.recurringRule, today);
   });
+}
+
+export function getActiveTodayTasks(tasks: TaskListItem[], today: Date): TaskListItem[] {
+  return getTodayTasks(tasks, today).filter((task) => !task.isCompleted && !task.isArchived);
+}
+
+export function getDashboardTodayTasks(tasks: TaskListItem[], today: Date): TaskListItem[] {
+  return getTodayTasks(tasks, today)
+    .filter((task) => !task.isArchived)
+    .sort((a, b) => {
+      if (a.isCompleted !== b.isCompleted) {
+        return a.isCompleted ? 1 : -1;
+      }
+
+      const aDue = a.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const bDue = b.dueDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (aDue !== bDue) {
+        return aDue - bDue;
+      }
+
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
 }
 
 export function getWeeklyTasks(tasks: TaskListItem[], today = new Date()): TaskListItem[] {

@@ -12,5 +12,57 @@ body {
 }
 
 body {
-  @apply bg-background text-foreground antialiased;
+  @apply bg-black text-foreground antialiased;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(125, 211, 252, 0.12), transparent 22rem),
+    radial-gradient(circle at 86% 14%, rgba(167, 139, 250, 0.08), transparent 18rem),
+    #020204;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.58) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(125, 211, 252, 0.35) 0 1px, transparent 1.8px);
+  background-position:
+    12px 18px,
+    46px 70px;
+  background-size:
+    92px 118px,
+    148px 174px;
+  opacity: 0.22;
+  animation: tranquil-stars 18s ease-in-out infinite alternate;
+}
+
+body::after {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 1px, transparent 1.7px);
+  background-position: 76px 34px;
+  background-size: 212px 188px;
+  opacity: 0.14;
+  animation: tranquil-stars 26s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes tranquil-stars {
+  from {
+    opacity: 0.12;
+  }
+
+  to {
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none;
+  }
 }

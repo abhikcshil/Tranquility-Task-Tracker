@@ -5,6 +5,19 @@ import { parseQuickAddInput } from '@/lib/quick-add';
 
 const now = new Date('2026-04-13T10:00:00.000Z'); // Monday
 
+test('parseQuickAddInput handles tonight as due today', () => {
+  const parsed = parseQuickAddInput('take a multivitamin tonight', now);
+
+  assert.equal(parsed.title, 'take a multivitamin');
+  assert.equal(parsed.destination, 'task');
+  assert.equal(parsed.recurrence, null);
+  assert.equal(parsed.dueDate?.getFullYear(), 2026);
+  assert.equal(parsed.dueDate?.getMonth(), 3);
+  assert.equal(parsed.dueDate?.getDate(), 13);
+  assert.equal(parsed.reminderAt?.getHours(), 20);
+  assert.equal(parsed.reminderAt?.getMinutes(), 0);
+});
+
 test('parseQuickAddInput handles tomorrow and title cleanup', () => {
   const parsed = parseQuickAddInput('Call mom tomorrow', now);
 
@@ -54,6 +67,23 @@ test('parseQuickAddInput handles weekly frequency shorthand', () => {
   assert.equal(parsed.title, 'Gym');
   assert.equal(parsed.recurrence?.type, 'weekly');
   assert.equal(parsed.recurrence?.frequency, 3);
+});
+
+test('parseQuickAddInput supports weekday names', () => {
+  const parsed = parseQuickAddInput('Clean kitchen Friday', now);
+
+  assert.equal(parsed.title, 'Clean kitchen');
+  assert.equal(parsed.dueDate?.getDay(), 5);
+});
+
+test('parseQuickAddInput supports tomorrow night and friday night phrases', () => {
+  const tomorrowNight = parseQuickAddInput('plan route tomorrow night', now);
+  const fridayNight = parseQuickAddInput('movie Friday night', now);
+
+  assert.equal(tomorrowNight.dueDate?.getDate(), 14);
+  assert.equal(tomorrowNight.reminderAt?.getHours(), 20);
+  assert.equal(fridayNight.dueDate?.getDay(), 5);
+  assert.equal(fridayNight.reminderAt?.getHours(), 20);
 });
 
 test('parseQuickAddInput routes daily vitamin task to habit', () => {

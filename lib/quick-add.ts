@@ -1,3 +1,4 @@
+import { startOfLocalDay } from '@/lib/dates';
 import type { RecurrenceInput } from '@/lib/validation';
 
 export type QuickAddDestination = 'task' | 'habit';
@@ -30,8 +31,7 @@ function nextWeekday(baseDate: Date, dayName: string): Date | null {
   }
 
   const start = startOfLocalDay(baseDate);
-  const delta = (targetIndex - start.getDay() + 7) % 7;
-  const offset = delta === 0 ? 7 : delta;
+  const offset = (targetIndex - start.getDay() + 7) % 7;
   const result = new Date(start);
   result.setDate(start.getDate() + offset);
   return result;
@@ -73,8 +73,32 @@ function cleanTitle(value: string): string {
     .replace(/\bdaily\b/i, '')
     .replace(/\bmonthly\b/i, '')
     .replace(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i, '')
+    .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function parseTimePhrase(raw: string, baseDate: Date): Date | null {
+  const match = raw.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+  if (!match) {
+    return null;
+  }
+
+  const hour12 = Number.parseInt(match[1], 10);
+  const minute = match[2] ? Number.parseInt(match[2], 10) : 0;
+  const meridiem = match[3].toLowerCase();
+  if (hour12 < 1 || hour12 > 12 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  let hour24 = hour12 % 12;
+  if (meridiem === 'pm') {
+    hour24 += 12;
+  }
+
+  const reminderAt = new Date(baseDate);
+  reminderAt.setHours(hour24, minute, 0, 0);
+  return reminderAt;
 }
 
 function inferDestination(title: string, recurrence: RecurrenceInput | null): QuickAddDestination {
@@ -127,7 +151,13 @@ export function parseQuickAddInput(rawInput: string, now = new Date()): ParsedQu
     recurrence = { type: 'monthly', frequency: 1 };
   }
 
-  if (/\btomorrow\b/i.test(raw)) {
+  const hasTodayToken = /\btoday\b/i.test(raw);
+  const hasTonightToken = /\btonight\b/i.test(raw);
+  const hasNightToken = /\bnight\b/i.test(raw);
+
+  if (/\b(today|tonight)\b/i.test(raw)) {
+    dueDate = startOfLocalDay(now);
+  } else if (/\btomorrow\b/i.test(raw)) {
     dueDate = startOfLocalDay(now);
     dueDate.setDate(dueDate.getDate() + 1);
   }

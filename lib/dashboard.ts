@@ -21,20 +21,14 @@ function getStartOfDay(date: Date): Date {
 }
 
 export function getWeekRange(today: Date): { start: Date; end: Date } {
-  const start = getStartOfDay(today);
-  const day = start.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  start.setDate(start.getDate() + diff);
-
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
+  const start = startOfLocalWeek(today);
+  const end = endOfLocalWeek(today);
 
   return { start, end };
 }
 
 export function computeDailyProgress(tasks: TaskListItem[], today: Date): ProgressMetrics {
-  const dueTodayTasks = tasks.filter((task) => getTodayTasks([task], today).length > 0);
+  const dueTodayTasks = tasks.filter((task) => isTaskDueToday(task, today));
   const completed = dueTodayTasks.filter((task) => task.isCompleted).length;
   const total = dueTodayTasks.length;
 
@@ -142,6 +136,10 @@ export function getDashboardTodayTasks(tasks: TaskListItem[], today: Date): Task
 
 export function getWeeklyTasks(tasks: TaskListItem[], today = new Date()): TaskListItem[] {
   return tasks.filter((task) => {
+    if (task.isCompleted) {
+      return false;
+    }
+
     const rule = task.recurringRule;
     if (!rule) {
       return false;

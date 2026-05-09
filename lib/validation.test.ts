@@ -34,7 +34,9 @@ test('validateTaskInput normalizes optional fields', () => {
   assert.equal(result.title, 'Study chapter 3');
   assert.equal(result.notes, null);
   assert.equal(result.pointValue, 5);
-  assert.equal(result.dueDate?.toISOString().startsWith('2026-04-20'), true);
+  assert.equal(result.dueDate?.getFullYear(), 2026);
+  assert.equal(result.dueDate?.getMonth(), 3);
+  assert.equal(result.dueDate?.getDate(), 20);
   assert.equal(result.recurrence?.daysOfWeek, '1,3,5');
 });
 

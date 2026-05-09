@@ -65,18 +65,18 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
   const selectedDayLabel = formatCalendarDayLabel(selectedDay);
 
   return (
-    <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+    <details className="animated-details group rounded-2xl border border-zinc-800 bg-zinc-900">
       <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-zinc-100">
         <span>View task calendar</span>
         <span className="text-xs text-zinc-400 group-open:hidden">Open</span>
         <span className="hidden text-xs text-zinc-400 group-open:inline">Close</span>
       </summary>
-      <div className="space-y-3 border-t border-zinc-800 p-4">
+      <div className="details-content space-y-3 border-t border-zinc-800 p-4">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={() => setVisibleMonth((month) => getPreviousMonth(month))}
-            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200"
+            className="pressable tap-target rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500"
             aria-label="Previous month"
           >
             Prev
@@ -87,7 +87,7 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
           <button
             type="button"
             onClick={() => setVisibleMonth((month) => getNextMonth(month))}
-            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200"
+            className="pressable tap-target rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-500"
             aria-label="Next month"
           >
             Next
@@ -112,12 +112,12 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
                 type="button"
                 onClick={() => setSelectedDay(day.date)}
                 className={[
-                  'relative aspect-square rounded-lg border text-xs transition',
+                  'pressable relative aspect-square rounded-lg border text-xs transition',
                   day.isCurrentMonth ? 'text-zinc-100' : 'text-zinc-600',
                   day.isToday
                     ? 'border-sky-500/70 bg-sky-500/10'
                     : 'border-zinc-800 bg-zinc-950/60',
-                  isSelected ? 'ring-1 ring-sky-300' : '',
+                  isSelected ? 'ring-1 ring-sky-300 scale-[0.98]' : '',
                 ].join(' ')}
                 aria-label={`Select ${formatCalendarSelectLabel(day.date)}`}
               >

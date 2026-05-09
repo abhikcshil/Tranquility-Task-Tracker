@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { TaskListItem } from '@/services/taskService';
+import { ActionSubmitButton } from '@/components/ui/action-submit-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toggleTaskCompletionAction } from '@/app/tasks/actions';
 import { formatTaskDueLabel } from '@/lib/dates';
@@ -49,7 +50,7 @@ export function TaskList({
         return (
           <li
             key={task.id}
-            className={`rounded-xl border border-zinc-800 bg-zinc-950/80 ${isCompact ? 'px-3 py-2 opacity-80' : 'p-3'}`}
+            className={`pressable rounded-xl border border-zinc-800 bg-zinc-950/80 transition-all duration-200 ease-out ${task.isCompleted ? 'motion-soft-enter' : ''} ${isCompact ? 'px-3 py-2 opacity-80' : 'p-3'}`}
             style={{
               borderLeftColor: getTaskCompletionCueColor(task),
               borderLeftWidth: '3px',
@@ -67,7 +68,7 @@ export function TaskList({
                 {showEditLink ? (
                   <Link
                     href="/tasks"
-                    className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+                    className="tap-target inline-flex items-center text-xs text-zinc-400 underline-offset-2 transition hover:text-zinc-200 hover:underline"
                   >
                     Edit
                   </Link>
@@ -75,16 +76,22 @@ export function TaskList({
                 {showCompletionToggle ? (
                   <form action={toggleTaskCompletionAction}>
                     <input type="hidden" name="taskId" value={task.id} />
-                    <button
-                      type="submit"
-                      className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
+                    <ActionSubmitButton
+                      pendingLabel="Saving..."
+                      haptic={task.isCompleted ? 'light' : 'success'}
+                      points={
+                        !task.isCompleted && task.recurringRule?.type !== 'weekly'
+                          ? task.pointValue
+                          : 0
+                      }
+                      className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100 active:scale-[0.98]"
                     >
                       {task.isCompleted
                         ? 'Mark incomplete'
                         : task.recurringRule?.type === 'weekly'
                           ? 'Log today'
                           : 'Mark complete'}
-                    </button>
+                    </ActionSubmitButton>
                   </form>
                 ) : null}
               </div>

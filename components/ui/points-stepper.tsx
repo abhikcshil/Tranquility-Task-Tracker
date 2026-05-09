@@ -28,7 +28,7 @@ export function PointsStepper({ name, defaultValue = 5, compact = false }: Point
   }
 
   const buttonClass =
-    'rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-medium text-zinc-200';
+    'pressable tap-target rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500';
   const selectClass = compact
     ? 'min-w-0 flex-1 rounded-l-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-xs text-zinc-100 outline-none ring-sky-500/40 focus:ring'
     : 'min-w-0 flex-1 rounded-l-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none ring-sky-500/40 focus:ring';

@@ -3,6 +3,7 @@ import { CategorySelect } from '@/components/ui/category-select';
 import { HabitList } from '@/components/ui/habit-list';
 import { PointsStepper } from '@/components/ui/points-stepper';
 import { SectionCard } from '@/components/ui/section-card';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { getHabits } from '@/services/habitService';
 import { getTaskCategories } from '@/services/taskService';
 
@@ -22,7 +23,7 @@ export default async function HabitsPage() {
         </p>
       </header>
 
-      <details className="group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+      <details className="animated-details group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-zinc-100">
           <span>+ Add Habit</span>
           <span className="text-xs text-zinc-400 group-open:hidden">Expand</span>
@@ -30,7 +31,7 @@ export default async function HabitsPage() {
         </summary>
         <form
           action={createHabitAction}
-          className="grid min-w-0 grid-cols-1 gap-3 border-t border-zinc-800 p-4 text-sm sm:grid-cols-2"
+          className="details-content grid min-w-0 grid-cols-1 gap-3 border-t border-zinc-800 p-4 text-sm sm:grid-cols-2"
         >
           <label className="min-w-0 space-y-1">
             <span className="text-xs text-zinc-400">Habit title</span>
@@ -82,12 +83,12 @@ export default async function HabitsPage() {
               className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
             />
           </label>
-          <button
-            type="submit"
-            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300 sm:col-span-2"
+          <SubmitButton
+            pendingLabel="Adding..."
+            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300 transition active:scale-[0.98] sm:col-span-2"
           >
             Add habit
-          </button>
+          </SubmitButton>
         </form>
       </details>
 

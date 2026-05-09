@@ -1,5 +1,6 @@
 import { runWeeklyResetAction } from '@/app/actions';
 import { PageShell } from '@/components/page-shell';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { formatDisplayDate } from '@/lib/dates';
 import {
   getCarryoverCandidates,
@@ -63,7 +64,7 @@ export default async function WeeklyReviewPage() {
                 {carryover.map((task) => (
                   <li
                     key={task.id}
-                    className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm text-zinc-200"
+                    className="pressable rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm text-zinc-200"
                   >
                     <label className="inline-flex items-center gap-2">
                       <input
@@ -82,12 +83,12 @@ export default async function WeeklyReviewPage() {
               </ul>
             )}
 
-            <button
-              type="submit"
-              className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
+            <SubmitButton
+              pendingLabel="Resetting..."
+              className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300 transition active:scale-[0.98]"
             >
               Run weekly reset
-            </button>
+            </SubmitButton>
           </form>
         </section>
       </div>

@@ -9,6 +9,11 @@ import {
 } from '@/services/settingsService';
 import { runWeeklyReset } from '@/services/weeklyReviewService';
 
+export type QuickAddActionState = {
+  status: 'idle' | 'success' | 'error';
+  message: string | null;
+};
+
 export async function quickAddAction(formData: FormData) {
   const text = String(formData.get('quickAdd') ?? '');
   await quickAddCapture(text);
@@ -16,6 +21,19 @@ export async function quickAddAction(formData: FormData) {
   revalidatePath('/');
   revalidatePath('/tasks');
   revalidatePath('/habits');
+}
+
+export async function quickAddWithStateAction(
+  _previousState: QuickAddActionState,
+  formData: FormData,
+): Promise<QuickAddActionState> {
+  try {
+    await quickAddAction(formData);
+    return { status: 'success', message: 'Captured.' };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Could not capture that.';
+    return { status: 'error', message };
+  }
 }
 
 export async function updateWeeklyGoalAction(formData: FormData) {

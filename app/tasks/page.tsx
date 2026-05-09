@@ -1,7 +1,9 @@
 import { SectionCard } from '@/components/ui/section-card';
+import { ActionSubmitButton } from '@/components/ui/action-submit-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CategorySelect } from '@/components/ui/category-select';
 import { PointsStepper } from '@/components/ui/points-stepper';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { TaskEditForm } from '@/components/ui/task-edit-form';
 import {
   archiveTaskAction,
@@ -60,7 +62,7 @@ export default async function TasksPage() {
         </p>
       </header>
 
-      <details className="group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+      <details className="animated-details group overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-zinc-100">
           <span>+ Add Task</span>
           <span className="text-xs text-zinc-400 group-open:hidden">Expand</span>
@@ -68,7 +70,7 @@ export default async function TasksPage() {
         </summary>
         <form
           action={createTaskAction}
-          className="grid min-w-0 grid-cols-1 gap-3 border-t border-zinc-800 p-4 text-sm sm:grid-cols-2"
+          className="details-content grid min-w-0 grid-cols-1 gap-3 border-t border-zinc-800 p-4 text-sm sm:grid-cols-2"
         >
           <label className="min-w-0 space-y-1">
             <span className="text-xs text-zinc-400">Task title</span>
@@ -118,9 +120,9 @@ export default async function TasksPage() {
             />
           </label>
 
-          <details className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs sm:col-span-2">
+          <details className="animated-details rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs sm:col-span-2">
             <summary className="cursor-pointer text-zinc-400">Recurrence (optional)</summary>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="details-content mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-zinc-500">Recurrence</span>
                 <select
@@ -162,12 +164,12 @@ export default async function TasksPage() {
             </div>
           </details>
 
-          <button
-            type="submit"
-            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300 sm:col-span-2"
+          <SubmitButton
+            pendingLabel="Adding..."
+            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300 transition active:scale-[0.98] sm:col-span-2"
           >
             Add task
-          </button>
+          </SubmitButton>
         </form>
       </details>
 
@@ -179,7 +181,7 @@ export default async function TasksPage() {
             {activeTasks.map((task) => (
               <li
                 key={task.id}
-                className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
+                className="pressable rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
                 style={{
                   borderLeftColor: getTaskCompletionCueColor(task),
                   borderLeftWidth: '3px',
@@ -192,21 +194,24 @@ export default async function TasksPage() {
                   <div className="flex gap-2">
                     <form action={toggleTaskCompletionAction}>
                       <input type="hidden" name="taskId" value={task.id} />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-200"
+                      <ActionSubmitButton
+                        pendingLabel="Saving..."
+                        haptic="success"
+                        points={task.recurringRule?.type === 'weekly' ? 0 : task.pointValue}
+                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-200 transition hover:border-zinc-500 active:scale-[0.98]"
                       >
                         {task.recurringRule?.type === 'weekly' ? 'Log today' : 'Complete'}
-                      </button>
+                      </ActionSubmitButton>
                     </form>
                     <form action={archiveTaskAction}>
                       <input type="hidden" name="taskId" value={task.id} />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400"
+                      <ActionSubmitButton
+                        pendingLabel="Archiving..."
+                        haptic="warning"
+                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 transition hover:border-zinc-500 active:scale-[0.98]"
                       >
                         Archive
-                      </button>
+                      </ActionSubmitButton>
                     </form>
                   </div>
                 </div>
@@ -215,7 +220,7 @@ export default async function TasksPage() {
                     {task.weeklyProgress.completed} / {task.weeklyProgress.target} this week
                   </p>
                 ) : null}
-                <details className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2">
+                <details className="animated-details rounded-lg border border-zinc-800 bg-zinc-900/60 p-2">
                   <summary className="cursor-pointer text-xs text-zinc-400">Edit task</summary>
                   <TaskEditForm
                     task={{
@@ -244,15 +249,15 @@ export default async function TasksPage() {
         {completedTasks.length === 0 ? (
           <EmptyState title="No completed tasks" message="Completed tasks will appear here." />
         ) : (
-          <details open className="space-y-2">
+          <details open className="animated-details space-y-2">
             <summary className="cursor-pointer text-sm text-zinc-400">
               Show completed ({completedTasks.length})
             </summary>
-            <ul className="space-y-2">
+            <ul className="details-content space-y-2">
               {completedTasks.map((task) => (
                 <li
                   key={task.id}
-                  className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
+                  className="pressable rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 motion-soft-enter"
                   style={{
                     borderLeftColor: getTaskCompletionCueColor(task),
                     borderLeftWidth: '3px',
@@ -264,12 +269,12 @@ export default async function TasksPage() {
                     <p className="text-sm font-medium text-zinc-200 line-through">{task.title}</p>
                     <form action={toggleTaskCompletionAction}>
                       <input type="hidden" name="taskId" value={task.id} />
-                      <button
-                        type="submit"
-                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300"
+                      <ActionSubmitButton
+                        pendingLabel="Saving..."
+                        className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 transition hover:border-zinc-500 active:scale-[0.98]"
                       >
                         Mark incomplete
-                      </button>
+                      </ActionSubmitButton>
                     </form>
                   </div>
                 </li>

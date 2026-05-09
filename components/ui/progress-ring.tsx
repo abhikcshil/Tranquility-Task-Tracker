@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { successImpact } from '@/lib/haptics';
+
 type ProgressRingProps = {
   label: string;
   value: number;
@@ -16,12 +21,15 @@ export function ProgressRing({
   variant = 'card',
 }: ProgressRingProps) {
   const strokeWidth = 9;
+  const clampedValue = Math.max(0, Math.min(100, value));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+  const offset = circumference - (clampedValue / 100) * circumference;
+  const previousValue = useRef(clampedValue);
+  const [completedPulse, setCompletedPulse] = useState(false);
   const containerClass =
     variant === 'card'
-      ? 'flex flex-col items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4'
+      ? 'flex flex-col items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 transition hover:border-zinc-700'
       : 'flex min-w-0 flex-1 flex-col items-center gap-1.5';
   const percentClass =
     variant === 'card'
@@ -36,9 +44,25 @@ export function ProgressRing({
       ? 'text-xs text-zinc-400'
       : 'text-center text-[11px] leading-tight text-zinc-400';
 
+  useEffect(() => {
+    if (previousValue.current < 100 && clampedValue >= 100) {
+      setCompletedPulse(true);
+      successImpact();
+      const timeout = window.setTimeout(() => setCompletedPulse(false), 760);
+      previousValue.current = clampedValue;
+      return () => window.clearTimeout(timeout);
+    }
+
+    previousValue.current = clampedValue;
+    return undefined;
+  }, [clampedValue]);
+
   return (
-    <div className={containerClass}>
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className={`${containerClass} ${completedPulse ? 'motion-complete-glow' : ''}`}>
+      <div
+        className={`relative ${completedPulse ? 'motion-ring-bump' : ''}`}
+        style={{ width: size, height: size }}
+      >
         <svg width={size} height={size} className="-rotate-90">
           <circle
             cx={size / 2}
@@ -60,9 +84,10 @@ export function ProgressRing({
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 560ms cubic-bezier(0.22, 1, 0.36, 1)' }}
           />
         </svg>
-        <div className={percentClass}>{centerLabel ?? `${value}%`}</div>
+        <div className={percentClass}>{centerLabel ?? `${Math.round(clampedValue)}%`}</div>
       </div>
       <p className={labelClass}>{label}</p>
       <p className={subtitleClass}>{subtitle}</p>

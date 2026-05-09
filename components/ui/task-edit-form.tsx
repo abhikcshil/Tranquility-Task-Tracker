@@ -43,7 +43,10 @@ export function TaskEditForm({
   );
 
   return (
-    <form action={formAction} className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+    <form
+      action={formAction}
+      className="details-content mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2"
+    >
       <input type="hidden" name="taskId" value={task.id} />
       <input type="hidden" name="reminderAt" value={task.reminderAtIso} />
       <label className="space-y-1">
@@ -154,7 +157,7 @@ export function TaskEditForm({
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-300 disabled:cursor-wait disabled:opacity-70 sm:col-span-2"
+        className="tap-target rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-300 transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-70 sm:col-span-2"
       >
         {isPending ? 'Saving...' : 'Save changes'}
       </button>

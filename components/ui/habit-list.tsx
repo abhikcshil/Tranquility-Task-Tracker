@@ -4,9 +4,11 @@ import {
   uncompleteHabitAction,
   updateHabitAction,
 } from '@/app/habits/actions';
+import { ActionSubmitButton } from '@/components/ui/action-submit-button';
 import { CategorySelect } from '@/components/ui/category-select';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PointsStepper } from '@/components/ui/points-stepper';
+import { SubmitButton } from '@/components/ui/submit-button';
 import type { HabitListItem } from '@/services/habitService';
 import type { CategoryOption } from '@/services/taskService';
 
@@ -28,7 +30,7 @@ export function HabitList({ habits, categories = [], showManage = false }: Habit
       {habits.map((habit) => (
         <li
           key={habit.id}
-          className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3"
+          className={`pressable rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 ${habit.completedToday ? 'motion-soft-enter' : ''}`}
           style={{ borderLeftColor: habit.category?.color ?? '#3f3f46', borderLeftWidth: '3px' }}
         >
           <div className="flex items-start justify-between gap-2">
@@ -38,13 +40,24 @@ export function HabitList({ habits, categories = [], showManage = false }: Habit
             </div>
             <form action={habit.completedToday ? uncompleteHabitAction : completeHabitAction}>
               <input type="hidden" name="habitId" value={habit.id} />
-              <button
-                type="submit"
-                className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-200 hover:border-zinc-500"
+              <ActionSubmitButton
+                pendingLabel="Saving..."
+                haptic={habit.completedToday ? 'light' : 'success'}
+                points={!habit.completedToday && !habit.progress.isComplete ? habit.pointValue : 0}
+                className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-200 transition hover:border-zinc-500 active:scale-[0.98]"
               >
                 {habit.completedToday ? 'Undo today' : 'Complete'}
-              </button>
+              </ActionSubmitButton>
             </form>
+          </div>
+
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+            <div
+              className="habit-progress-fill h-full rounded-full bg-emerald-400"
+              style={{
+                width: `${Math.min(100, Math.round((habit.progress.completed / habit.progress.target) * 100))}%`,
+              }}
+            />
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
@@ -63,11 +76,11 @@ export function HabitList({ habits, categories = [], showManage = false }: Habit
           </div>
 
           {showManage ? (
-            <details className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-2">
+            <details className="animated-details mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-2">
               <summary className="cursor-pointer text-xs text-zinc-400">Edit habit</summary>
               <form
                 action={updateHabitAction}
-                className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2"
+                className="details-content mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2"
               >
                 <input type="hidden" name="habitId" value={habit.id} />
                 <label className="space-y-1">
@@ -121,21 +134,22 @@ export function HabitList({ habits, categories = [], showManage = false }: Habit
                     className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
                   />
                 </label>
-                <button
-                  type="submit"
-                  className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-300 sm:col-span-2"
+                <SubmitButton
+                  pendingLabel="Saving..."
+                  className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-300 transition active:scale-[0.98] sm:col-span-2"
                 >
                   Save habit
-                </button>
+                </SubmitButton>
               </form>
               <form action={deleteHabitAction} className="mt-2">
                 <input type="hidden" name="habitId" value={habit.id} />
-                <button
-                  type="submit"
-                  className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 text-xs font-medium text-red-300"
+                <ActionSubmitButton
+                  pendingLabel="Deleting..."
+                  haptic="warning"
+                  className="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 text-xs font-medium text-red-300 transition active:scale-[0.98]"
                 >
                   Delete habit
-                </button>
+                </ActionSubmitButton>
               </form>
             </details>
           ) : null}

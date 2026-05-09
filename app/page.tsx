@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { quickAddAction } from '@/app/actions';
 import { HabitList } from '@/components/ui/habit-list';
 import { CalendarWidget } from '@/components/ui/calendar-widget';
 import { NoteList } from '@/components/ui/note-list';
 import { ProgressRing } from '@/components/ui/progress-ring';
+import { QuickAddForm } from '@/components/ui/quick-add-form';
 import { SectionCard } from '@/components/ui/section-card';
 import { TaskList } from '@/components/ui/task-list';
 import {
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+      <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 motion-soft-enter">
         <p className="text-xs uppercase tracking-wide text-zinc-400">Tranquility Dashboard</p>
         <h1 className="mt-1 text-2xl font-semibold text-zinc-100">
           Good focus, one step at a time
@@ -122,20 +122,7 @@ export default async function DashboardPage() {
       </SectionCard>
 
       <SectionCard title="Quick Add" description="Natural-feeling capture for tasks and habits.">
-        <form action={quickAddAction} className="flex flex-col gap-2 sm:flex-row">
-          <input
-            required
-            name="quickAdd"
-            placeholder='Try: "Call mom tomorrow" or "Take vitamins daily"'
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-          />
-          <button
-            type="submit"
-            className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-300"
-          >
-            Capture
-          </button>
-        </form>
+        <QuickAddForm />
       </SectionCard>
 
       <SectionCard title="Habits" description="Progress snapshots from your current habits.">
@@ -150,7 +137,7 @@ export default async function DashboardPage() {
             {upcomingReminders.map((task) => (
               <li
                 key={task.id}
-                className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-zinc-200"
+                className="pressable rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-zinc-200"
               >
                 {task.title} - {task.reminderAt ? formatDisplayDateTime(task.reminderAt) : ''}
               </li>
@@ -194,13 +181,13 @@ export default async function DashboardPage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Link
           href="/focus"
-          className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
+          className="pressable tap-target rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
         >
           Open Focus Mode
         </Link>
         <Link
           href="/weekly-review"
-          className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
+          className="pressable tap-target rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-sky-500/50 hover:text-sky-300"
         >
           Weekly Review
         </Link>

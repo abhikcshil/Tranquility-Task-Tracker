@@ -26,7 +26,10 @@ export default async function FocusPage() {
       />
 
       <div className="text-center">
-        <Link href="/" className="text-sm text-sky-300 hover:text-sky-200">
+        <Link
+          href="/"
+          className="tap-target inline-flex items-center text-sm text-sky-300 transition hover:text-sky-200 active:scale-[0.98]"
+        >
           Back to dashboard
         </Link>
       </div>

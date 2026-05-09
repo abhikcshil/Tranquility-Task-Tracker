@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components/ui/section-card';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CategorySelect } from '@/components/ui/category-select';
 import { PointsStepper } from '@/components/ui/points-stepper';
 import {
   archiveTaskAction,
@@ -98,18 +99,10 @@ export default async function TasksPage() {
           </label>
           <label className="min-w-0 space-y-1">
             <span className="text-xs text-zinc-400">Category</span>
-            <select
-              name="categoryId"
-              defaultValue=""
-              className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring"
-            >
-              <option value="">Uncategorized</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+            <CategorySelect
+              categories={categories}
+              className="w-full min-w-0 max-w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-sky-500/40 focus:ring disabled:cursor-not-allowed disabled:text-zinc-500"
+            />
           </label>
           <label className="min-w-0 space-y-1 sm:col-span-2">
             <span className="text-xs text-zinc-400">Points</span>
@@ -265,18 +258,11 @@ export default async function TasksPage() {
                     </label>
                     <label className="space-y-1">
                       <span className="text-zinc-500">Category</span>
-                      <select
-                        name="categoryId"
-                        defaultValue={task.categoryId ?? ''}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      >
-                        <option value="">Uncategorized</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
+                      <CategorySelect
+                        categories={categories}
+                        defaultValue={task.categoryId}
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-500"
+                      />
                     </label>
                     <label className="space-y-1 sm:col-span-2">
                       <span className="text-zinc-500">Points</span>

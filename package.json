@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "test": "node --test --import tsx lib/*.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed"
   },

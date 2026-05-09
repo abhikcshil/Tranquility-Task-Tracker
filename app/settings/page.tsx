@@ -1,8 +1,10 @@
 import { addMilestoneAction, deleteMilestoneAction, updateWeeklyGoalAction } from '@/app/actions';
 import { PageShell } from '@/components/page-shell';
+import { getAppBuildInfo } from '@/lib/build-info';
 import { getRewardMilestones, getWeeklyPointsGoal } from '@/services/settingsService';
 
 export default async function SettingsPage() {
+  const buildInfo = getAppBuildInfo();
   const [weeklyGoal, milestones] = await Promise.all([
     getWeeklyPointsGoal(),
     getRewardMilestones(),
@@ -76,6 +78,16 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-xs text-zinc-500">
+          <h2 className="text-sm font-semibold text-zinc-300">About</h2>
+          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <dt>Version</dt>
+            <dd className="text-zinc-400">{buildInfo.version}</dd>
+            <dt>Build</dt>
+            <dd className="break-all text-zinc-400">{buildInfo.buildTimestamp}</dd>
+          </dl>
         </section>
       </div>
     </PageShell>

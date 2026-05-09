@@ -9,6 +9,11 @@ import {
   getTaskDatesForMonth,
   getTasksForCalendarDay,
 } from '@/lib/calendar';
+import {
+  formatCalendarDayLabel,
+  formatCalendarMonthLabel,
+  formatCalendarSelectLabel,
+} from '@/lib/dates';
 import { getTaskCategoryCueColor, getTaskCompletionCueColor } from '@/lib/task-visuals';
 
 type CalendarWidgetTask = {
@@ -48,18 +53,16 @@ function toDateTask(task: CalendarWidgetTask) {
 
 export function CalendarWidget({ tasks }: CalendarWidgetProps) {
   const today = useMemo(() => new Date(), []);
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+  );
   const [selectedDay, setSelectedDay] = useState(() => today);
 
   const dateTasks = useMemo(() => tasks.map(toDateTask), [tasks]);
   const calendarDays = getMonthCalendarDays(visibleMonth, today);
   const taskDateKeys = new Set(getTaskDatesForMonth(dateTasks, visibleMonth));
   const selectedTasks = getTasksForCalendarDay(dateTasks, selectedDay);
-  const selectedDayLabel = selectedDay.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  const selectedDayLabel = formatCalendarDayLabel(selectedDay);
 
   return (
     <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
@@ -79,7 +82,7 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
             Prev
           </button>
           <p className="text-sm font-medium text-zinc-100">
-            {visibleMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            {formatCalendarMonthLabel(visibleMonth)}
           </p>
           <button
             type="button"
@@ -111,10 +114,12 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
                 className={[
                   'relative aspect-square rounded-lg border text-xs transition',
                   day.isCurrentMonth ? 'text-zinc-100' : 'text-zinc-600',
-                  day.isToday ? 'border-sky-500/70 bg-sky-500/10' : 'border-zinc-800 bg-zinc-950/60',
+                  day.isToday
+                    ? 'border-sky-500/70 bg-sky-500/10'
+                    : 'border-zinc-800 bg-zinc-950/60',
                   isSelected ? 'ring-1 ring-sky-300' : '',
                 ].join(' ')}
-                aria-label={`Select ${day.date.toLocaleDateString()}`}
+                aria-label={`Select ${formatCalendarSelectLabel(day.date)}`}
               >
                 {day.date.getDate()}
                 {hasTasks ? (
@@ -148,12 +153,16 @@ export function CalendarWidget({ tasks }: CalendarWidgetProps) {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-zinc-100">{task.title}</span>
-                    <span className={task.isCompleted ? 'text-xs text-emerald-300' : 'text-xs text-yellow-300'}>
+                    <span
+                      className={
+                        task.isCompleted ? 'text-xs text-emerald-300' : 'text-xs text-yellow-300'
+                      }
+                    >
                       {task.isCompleted ? 'Done' : 'Open'}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {task.category?.name ?? 'Uncategorized'} · {task.pointValue} pts
+                    {task.category?.name ?? 'Uncategorized'} - {task.pointValue} pts
                   </p>
                 </li>
               ))}

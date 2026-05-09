@@ -15,6 +15,7 @@ import {
   getWeekRange,
   getWeeklyTasks,
 } from '@/lib/dashboard';
+import { formatDisplayDate, formatDisplayDateTime } from '@/lib/dates';
 import { computeMilestoneProgress } from '@/lib/settings';
 import { getHabits } from '@/services/habitService';
 import { getPinnedNotes } from '@/services/noteService';
@@ -69,9 +70,9 @@ export default async function DashboardPage() {
           Good focus, one step at a time
         </h1>
         <p className="mt-1 text-sm text-zinc-400">
-          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}{' '}
-          • Week of {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} -{' '}
-          {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+          {formatDisplayDate(today, { weekday: 'long', month: 'short', day: 'numeric' })} - Week of{' '}
+          {formatDisplayDate(start, { month: 'short', day: 'numeric' })} -{' '}
+          {formatDisplayDate(end, { month: 'short', day: 'numeric' })}
         </p>
         <div className="mt-5 flex items-start justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-950/40 px-2 py-3">
           <ProgressRing
@@ -151,7 +152,7 @@ export default async function DashboardPage() {
                 key={task.id}
                 className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-zinc-200"
               >
-                {task.title} • {task.reminderAt?.toLocaleString()}
+                {task.title} - {task.reminderAt ? formatDisplayDateTime(task.reminderAt) : ''}
               </li>
             ))}
           </ul>

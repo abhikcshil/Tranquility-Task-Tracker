@@ -1,4 +1,4 @@
-import { isSameLocalDay } from '@/lib/dates';
+import { formatDateKey, isSameLocalDay, startOfLocalDay } from '@/lib/dates';
 import { appearsInToday } from '@/lib/recurrence';
 import type { TaskListItem } from '@/services/taskService';
 
@@ -13,10 +13,6 @@ type CalendarTask = Pick<
   'createdAt' | 'dueDate' | 'isArchived' | 'isCompleted' | 'recurringRule'
 >;
 
-function startOfLocalDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -30,11 +26,7 @@ function isWithinMonth(date: Date, monthDate: Date): boolean {
 }
 
 function calendarKey(date: Date): string {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+  return formatDateKey(date);
 }
 
 export function getMonthCalendarDays(monthDate: Date, today = new Date()): CalendarDay[] {
@@ -93,7 +85,7 @@ export function getTaskDatesForMonth(tasks: CalendarTask[], monthDate: Date): st
     }
 
     if (task.recurringRule?.type === 'daily' || task.recurringRule?.type === 'weekdays') {
-      let cursor = new Date(monthStart);
+      const cursor = new Date(monthStart);
       while (cursor <= monthEnd) {
         if (appearsInToday(task.recurringRule, cursor)) {
           taskDates.add(calendarKey(cursor));

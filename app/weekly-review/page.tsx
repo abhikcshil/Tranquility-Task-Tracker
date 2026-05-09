@@ -1,5 +1,6 @@
 import { runWeeklyResetAction } from '@/app/actions';
 import { PageShell } from '@/components/page-shell';
+import { formatDisplayDate } from '@/lib/dates';
 import {
   getCarryoverCandidates,
   getPreviousWeekSummary,
@@ -19,7 +20,8 @@ export default async function WeeklyReviewPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-sm">
           <h2 className="text-lg font-semibold text-zinc-100">Previous week summary</h2>
           <p className="mt-2 text-zinc-300">
-            {summary.range.start.toLocaleDateString()} - {summary.range.end.toLocaleDateString()}
+            {formatDisplayDate(summary.range.start, { month: 'short', day: 'numeric' })} -{' '}
+            {formatDisplayDate(summary.range.end, { month: 'short', day: 'numeric' })}
           </p>
           <ul className="mt-3 space-y-1 text-zinc-300">
             <li>

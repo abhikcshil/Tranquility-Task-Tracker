@@ -1,7 +1,51 @@
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+export const APP_DISPLAY_TIME_ZONE = 'America/New_York';
+
+const DISPLAY_LOCALE = 'en-US';
 
 function padDatePart(value: number): string {
   return String(value).padStart(2, '0');
+}
+
+function isUtcMidnight(date: Date): boolean {
+  return (
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+  );
+}
+
+function displayDateForFormatting(date: Date): Date {
+  if (!isUtcMidnight(date)) {
+    return date;
+  }
+
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12));
+}
+
+function formatInAppTimeZone(date: Date, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+    timeZone: APP_DISPLAY_TIME_ZONE,
+    ...options,
+  }).format(displayDateForFormatting(date));
+}
+
+function getDisplayDatePart(date: Date, type: 'year' | 'month' | 'day'): string {
+  const part = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+    timeZone: APP_DISPLAY_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts(displayDateForFormatting(date))
+    .find((item) => item.type === type)?.value;
+
+  if (!part) {
+    throw new Error(`Unable to format ${type} for date.`);
+  }
+
+  return part;
 }
 
 export function parseLocalDateInput(value: string): Date | null {
@@ -15,11 +59,7 @@ export function parseLocalDateInput(value: string): Date | null {
   const day = Number(match[3]);
   const date = new Date(year, month - 1, day);
 
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
     return null;
   }
 
@@ -93,20 +133,11 @@ function isSameUtcDay(dateA: Date, dateB: Date): boolean {
   );
 }
 
-function isUtcMidnight(date: Date): boolean {
-  return (
-    date.getUTCHours() === 0 &&
-    date.getUTCMinutes() === 0 &&
-    date.getUTCSeconds() === 0 &&
-    date.getUTCMilliseconds() === 0
-  );
-}
-
 export function isDueOnDay(dueDate: Date, day: Date): boolean {
   return isSameLocalDay(dueDate, day) || (isUtcMidnight(dueDate) && isSameUtcDay(dueDate, day));
 }
 
-export function formatDateInputValue(date: Date): string {
+export function formatDateKey(date: Date): string {
   if (isUtcMidnight(date)) {
     return [
       date.getUTCFullYear(),
@@ -115,7 +146,50 @@ export function formatDateInputValue(date: Date): string {
     ].join('-');
   }
 
-  return [date.getFullYear(), padDatePart(date.getMonth() + 1), padDatePart(date.getDate())].join(
-    '-',
-  );
+  return [
+    getDisplayDatePart(date, 'year'),
+    getDisplayDatePart(date, 'month'),
+    getDisplayDatePart(date, 'day'),
+  ].join('-');
+}
+
+export function formatDateInputValue(date: Date): string {
+  return formatDateKey(date);
+}
+
+export function formatDisplayDate(
+  date: Date,
+  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
+): string {
+  return formatInAppTimeZone(date, options);
+}
+
+export function formatDisplayDateTime(date: Date): string {
+  return formatInAppTimeZone(date, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+export function formatCalendarMonthLabel(date: Date): string {
+  return formatDisplayDate(date, { month: 'long', year: 'numeric' });
+}
+
+export function formatCalendarDayLabel(date: Date): string {
+  return formatDisplayDate(date, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+export function formatCalendarSelectLabel(date: Date): string {
+  return formatDisplayDate(date, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export function formatTaskDueLabel(date: Date): string {
+  return `Due ${formatDisplayDate(date, { month: 'short', day: 'numeric', year: 'numeric' })}`;
 }

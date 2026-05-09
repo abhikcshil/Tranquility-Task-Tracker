@@ -4,6 +4,8 @@ import test from 'node:test';
 import {
   endOfLocalDay,
   endOfLocalWeek,
+  formatCalendarDayLabel,
+  formatDateInputValue,
   isSameLocalDay,
   normalizeDateInput,
   parseLocalDateInput,
@@ -43,4 +45,11 @@ test('local day and week boundaries are stable', () => {
 
 test('parseLocalDateInput rejects impossible calendar dates', () => {
   assert.equal(parseLocalDateInput('2026-02-31'), null);
+});
+
+test('display helpers preserve date-only UTC midnight values', () => {
+  const dateOnly = new Date('2026-04-13T00:00:00.000Z');
+
+  assert.equal(formatDateInputValue(dateOnly), '2026-04-13');
+  assert.equal(formatCalendarDayLabel(dateOnly), 'Mon, Apr 13');
 });

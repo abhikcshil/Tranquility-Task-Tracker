@@ -2,73 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { archiveTask, createTask, toggleTaskCompletion, updateTask } from '@/services/taskService';
-import type { RecurrenceInput } from '@/lib/validation';
-
-function parseOptionalInt(value: FormDataEntryValue | null): number | null {
-  if (typeof value !== 'string' || value.length === 0) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-function parseOptionalString(value: FormDataEntryValue | null): string | null {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function parsePoints(value: FormDataEntryValue | null): number {
-  const parsed = parseOptionalInt(value) ?? 5;
-  return Math.max(0, Math.round(parsed / 5) * 5);
-}
-
-function combineDueDateAndTime(formData: FormData): string | null {
-  const dueDate = parseOptionalString(formData.get('dueDate'));
-  const dueTime = parseOptionalString(formData.get('dueTime'));
-
-  if (!dueDate) {
-    return null;
-  }
-
-  return dueTime ? `${dueDate}T${dueTime}` : dueDate;
-}
-
-function parseRecurrence(formData: FormData): RecurrenceInput | null {
-  const type = String(formData.get('recurrenceType') ?? 'none') as RecurrenceInput['type'];
-  if (type === 'none') {
-    return null;
-  }
-
-  const recurrence: RecurrenceInput = {
-    type,
-    frequency: parseOptionalInt(formData.get('recurrenceFrequency')),
-  };
-
-  if (type === 'weekdays') {
-    recurrence.weekdays = formData
-      .getAll('weekdays')
-      .map((value) => Number(value))
-      .filter((value) => Number.isInteger(value));
-  }
-
-  return recurrence;
-}
+import { parseTaskFormData } from '@/lib/task-form';
 
 export async function createTaskAction(formData: FormData) {
-  await createTask({
-    title: String(formData.get('title') ?? ''),
-    notes: parseOptionalString(formData.get('notes')),
-    categoryId: parseOptionalInt(formData.get('categoryId')),
-    dueDate: combineDueDateAndTime(formData),
-    reminderAt: parseOptionalString(formData.get('reminderAt')),
-    pointValue: parsePoints(formData.get('pointValue')),
-    recurrence: parseRecurrence(formData),
-  });
+  await createTask(parseTaskFormData(formData));
 
   revalidatePath('/tasks');
   revalidatePath('/');
@@ -82,15 +19,7 @@ export async function updateTaskAction(formData: FormData) {
     throw new Error('Task id is invalid.');
   }
 
-  await updateTask(taskId, {
-    title: String(formData.get('title') ?? ''),
-    notes: parseOptionalString(formData.get('notes')),
-    categoryId: parseOptionalInt(formData.get('categoryId')),
-    dueDate: combineDueDateAndTime(formData),
-    reminderAt: parseOptionalString(formData.get('reminderAt')),
-    pointValue: parsePoints(formData.get('pointValue')),
-    recurrence: parseRecurrence(formData),
-  });
+  await updateTask(taskId, parseTaskFormData(formData));
 
   revalidatePath('/tasks');
   revalidatePath('/');

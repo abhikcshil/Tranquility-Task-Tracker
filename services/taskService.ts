@@ -253,6 +253,10 @@ export async function toggleTaskCompletion(taskId: number): Promise<TaskListItem
           update: { completed: true, pointsAwarded: existing.pointValue },
         });
 
+        await tx.pointEvent.deleteMany({
+          where: { sourceType: 'task-instance', sourceId: instance.id },
+        });
+
         await tx.pointEvent.create({
           data: {
             amount: existing.pointValue,
@@ -280,6 +284,13 @@ export async function toggleTaskCompletion(taskId: number): Promise<TaskListItem
     });
 
     if (plan.pointEventAction === 'create') {
+      await tx.pointEvent.deleteMany({
+        where: {
+          sourceType: 'task',
+          sourceId: existing.id,
+        },
+      });
+
       await tx.pointEvent.create({
         data: {
           amount: existing.pointValue,

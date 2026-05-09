@@ -1,5 +1,12 @@
 import { prisma } from '@/lib/prisma';
-import { getHabitCurrentStreak, getHabitProgressForDateRange, getEndOfWeek, getStartOfWeek, isSameLocalDay, type HabitFrequencyType } from '@/lib/habits';
+import {
+  getHabitCurrentStreak,
+  getHabitProgressForDateRange,
+  getEndOfWeek,
+  getStartOfWeek,
+  isSameLocalDay,
+  type HabitFrequencyType,
+} from '@/lib/habits';
 
 export type HabitListItem = {
   id: number;
@@ -8,6 +15,7 @@ export type HabitListItem = {
   frequencyType: 'daily' | 'weekly';
   targetCount: number;
   pointValue: number;
+  categoryId: number | null;
   category: {
     name: string;
     color: string;
@@ -22,13 +30,12 @@ export type HabitListItem = {
   completedToday: boolean;
 };
 
-
 export type HabitCompletionPlan = {
   shouldCreateCompletion: boolean;
   shouldDeleteCompletion: boolean;
 };
 
-export function getHabitCompletionPlan(completedToday: boolean) : HabitCompletionPlan {
+export function getHabitCompletionPlan(completedToday: boolean): HabitCompletionPlan {
   return {
     shouldCreateCompletion: !completedToday,
     shouldDeleteCompletion: completedToday,
@@ -53,7 +60,9 @@ export async function getHabits(today = new Date()): Promise<HabitListItem[]> {
     const periodCompletions =
       habit.frequencyType === 'daily'
         ? habit.completions.filter((completion) => isSameLocalDay(completion.date, today))
-        : habit.completions.filter((completion) => completion.date >= weekStart && completion.date <= weekEnd);
+        : habit.completions.filter(
+            (completion) => completion.date >= weekStart && completion.date <= weekEnd,
+          );
 
     return {
       id: habit.id,
@@ -62,6 +71,7 @@ export async function getHabits(today = new Date()): Promise<HabitListItem[]> {
       frequencyType: habit.frequencyType as HabitFrequencyType,
       targetCount: habit.targetCount,
       pointValue: habit.pointValue,
+      categoryId: habit.categoryId,
       category: habit.category
         ? {
             name: habit.category.name,
@@ -78,7 +88,9 @@ export async function getHabits(today = new Date()): Promise<HabitListItem[]> {
         habit.completions.map((completion) => completion.date),
         today,
       ),
-      completedToday: habit.completions.some((completion) => isSameLocalDay(completion.date, today)),
+      completedToday: habit.completions.some((completion) =>
+        isSameLocalDay(completion.date, today),
+      ),
     };
   });
 }
@@ -129,6 +141,10 @@ export async function createHabitCompletion(habitId: number, today = new Date())
         habitId,
         date,
       },
+    });
+
+    await tx.pointEvent.deleteMany({
+      where: { sourceType: 'habit', sourceId: completion.id },
     });
 
     await tx.pointEvent.create({

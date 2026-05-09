@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -37,7 +37,7 @@ async function main() {
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  const [mathTask, reportTask, cleanDeskTask, laundryTask] = await Promise.all([
+  const [, , , laundryTask] = await Promise.all([
     prisma.task.create({
       data: {
         title: 'Review algebra assignment',
@@ -116,15 +116,6 @@ async function main() {
       content: 'School review, keep gym streak, and organize home tasks.',
       pinned: true,
     },
-  });
-
-  await prisma.pointEvent.createMany({
-    data: [
-      { amount: 10, sourceType: 'task', sourceId: mathTask.id },
-      { amount: 5, sourceType: 'task', sourceId: reportTask.id },
-      { amount: 15, sourceType: 'habit', sourceId: gymHabit.id },
-      { amount: 20, sourceType: 'bonus', sourceId: null },
-    ] satisfies Prisma.PointEventCreateManyInput[],
   });
 }
 

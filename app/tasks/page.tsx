@@ -2,11 +2,11 @@ import { SectionCard } from '@/components/ui/section-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CategorySelect } from '@/components/ui/category-select';
 import { PointsStepper } from '@/components/ui/points-stepper';
+import { TaskEditForm } from '@/components/ui/task-edit-form';
 import {
   archiveTaskAction,
   createTaskAction,
   toggleTaskCompletionAction,
-  updateTaskAction,
 } from '@/app/tasks/actions';
 import { formatDateInputValue } from '@/lib/dates';
 import { getTaskCategoryCueColor, getTaskCompletionCueColor } from '@/lib/task-visuals';
@@ -217,117 +217,22 @@ export default async function TasksPage() {
                 ) : null}
                 <details className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-2">
                   <summary className="cursor-pointer text-xs text-zinc-400">Edit task</summary>
-                  <form
-                    action={updateTaskAction}
-                    className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2"
-                  >
-                    <input type="hidden" name="taskId" value={task.id} />
-                    <input
-                      type="hidden"
-                      name="reminderAt"
-                      value={task.reminderAt ? task.reminderAt.toISOString() : ''}
-                    />
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Task title</span>
-                      <input
-                        required
-                        name="title"
-                        defaultValue={task.title}
-                        placeholder="Task title"
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Due date</span>
-                      <input
-                        type="date"
-                        name="dueDate"
-                        aria-label="Due date, mm/dd/yyyy"
-                        defaultValue={task.dueDate ? formatDateInputValue(task.dueDate) : ''}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Optional time</span>
-                      <input
-                        type="time"
-                        name="dueTime"
-                        defaultValue={formatTimeInputValue(task.dueDate)}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Category</span>
-                      <CategorySelect
-                        categories={categories}
-                        defaultValue={task.categoryId}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-500"
-                      />
-                    </label>
-                    <label className="space-y-1 sm:col-span-2">
-                      <span className="text-zinc-500">Points</span>
-                      <PointsStepper name="pointValue" defaultValue={task.pointValue} compact />
-                    </label>
-                    <label className="space-y-1 sm:col-span-2">
-                      <span className="text-zinc-500">Notes</span>
-                      <textarea
-                        name="notes"
-                        defaultValue={task.notes ?? ''}
-                        placeholder="Notes (optional)"
-                        rows={2}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Recurrence</span>
-                      <select
-                        name="recurrenceType"
-                        defaultValue={task.recurringRule?.type ?? 'none'}
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      >
-                        {recurrenceOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-zinc-500">Frequency</span>
-                      <input
-                        name="recurrenceFrequency"
-                        type="number"
-                        min={1}
-                        defaultValue={task.recurringRule?.frequency ?? ''}
-                        placeholder="Frequency"
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-2 py-2 text-zinc-100"
-                      />
-                    </label>
-                    <div className="sm:col-span-2 flex flex-wrap gap-2">
-                      {weekdayOptions.map((day) => (
-                        <label
-                          key={day.value}
-                          className="inline-flex items-center gap-1 rounded border border-zinc-700 px-2 py-1"
-                        >
-                          <input
-                            type="checkbox"
-                            name="weekdays"
-                            value={day.value}
-                            defaultChecked={task.recurringRule?.daysOfWeek
-                              ?.split(',')
-                              .includes(String(day.value))}
-                          />
-                          {day.label}
-                        </label>
-                      ))}
-                    </div>
-                    <button
-                      type="submit"
-                      className="rounded-md border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-300 sm:col-span-2"
-                    >
-                      Save changes
-                    </button>
-                  </form>
+                  <TaskEditForm
+                    task={{
+                      id: task.id,
+                      title: task.title,
+                      notes: task.notes,
+                      categoryId: task.categoryId,
+                      dueDateInput: task.dueDate ? formatDateInputValue(task.dueDate) : '',
+                      dueTimeInput: formatTimeInputValue(task.dueDate),
+                      reminderAtIso: task.reminderAt ? task.reminderAt.toISOString() : '',
+                      pointValue: task.pointValue,
+                      recurringRule: task.recurringRule,
+                    }}
+                    categories={categories}
+                    recurrenceOptions={recurrenceOptions}
+                    weekdayOptions={weekdayOptions}
+                  />
                 </details>
               </li>
             ))}

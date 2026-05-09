@@ -90,7 +90,7 @@ export default async function DashboardPage() {
             variant="compact"
           />
           <ProgressRing
-            label="Points"
+            label="Weekly points"
             value={weeklyPointsProgress.percent}
             centerLabel={`${weekPoints} pts`}
             subtitle={`${weeklyPointsProgress.total} goal`}

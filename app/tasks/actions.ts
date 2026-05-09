@@ -4,6 +4,15 @@ import { revalidatePath } from 'next/cache';
 import { archiveTask, createTask, toggleTaskCompletion, updateTask } from '@/services/taskService';
 import { parseTaskFormData } from '@/lib/task-form';
 
+export type TaskActionState = {
+  status: 'idle' | 'success' | 'error';
+  message: string | null;
+};
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Something went wrong.';
+}
+
 export async function createTaskAction(formData: FormData) {
   await createTask(parseTaskFormData(formData));
 
@@ -24,6 +33,18 @@ export async function updateTaskAction(formData: FormData) {
   revalidatePath('/tasks');
   revalidatePath('/');
   revalidatePath('/focus');
+}
+
+export async function updateTaskWithStateAction(
+  _previousState: TaskActionState,
+  formData: FormData,
+): Promise<TaskActionState> {
+  try {
+    await updateTaskAction(formData);
+    return { status: 'success', message: 'Task saved.' };
+  } catch (error) {
+    return { status: 'error', message: getErrorMessage(error) };
+  }
 }
 
 export async function toggleTaskCompletionAction(formData: FormData) {
